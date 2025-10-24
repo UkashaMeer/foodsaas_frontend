@@ -1,6 +1,6 @@
 import { useAuthDialogState } from "@/store/useAuthDialogState";
 import { Button } from "../ui/button";
-import { Dialog, DialogContent } from "../ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { useLogin } from "@/api/auth/useLogin";
 import { useState } from "react";
@@ -10,7 +10,7 @@ import { useUserLoginState } from "@/store/useUserLoginState";
 export default function LoginForm() {
     const { mutate, isPending} = useLogin()
     const { checkLogin } = useUserLoginState()
-    const { showLogin, closeLogin } = useAuthDialogState()
+    const { showLogin, closeLogin, openRegister } = useAuthDialogState()
     const [form, setForm] = useState({ email: "", password: "" }) 
 
     const handleSubmit = (e) => {
@@ -33,7 +33,7 @@ export default function LoginForm() {
     return (
         <Dialog className="flex text-center px-4" open={showLogin} onOpenChange={closeLogin}>
             <DialogContent>
-                <h1 className="text-2xl font-bold">Login</h1>
+                <DialogTitle className="text-2xl font-bold">Login</DialogTitle>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-2">
                     <Input
                         type="Email"
@@ -57,6 +57,9 @@ export default function LoginForm() {
                         }
                     </Button>
                 </form>
+                <span className="text-sm text-gray-500 mx-auto">
+                    Don't have account? <button className="text-primary cursor-pointer underline" onClick={() => {closeLogin(); openRegister();}}>Register Now</button>
+                </span>
             </DialogContent>
         </Dialog>
     )

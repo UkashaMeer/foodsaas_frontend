@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { useAuthDialogState } from "@/store/useAuthDialogState";
 import { useUserLoginState } from "@/store/useUserLoginState";
 import { Lock, User } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function UserLogin() {
     const { isLogin, checkLogin } = useUserLoginState();
-    const { openLogin } = useAuthDialogState()
+    const { openLogin, openRegister } = useAuthDialogState()
     const [hydrated, setHydrated] = useState(false);
 
     useEffect(() => {
@@ -22,12 +23,14 @@ export default function UserLogin() {
             <div className='flex items-center gap-2'>
                 {isLogin ? (
                     <div className='bg-primary p-2 rounded-md relative'>
-                        <User className='text-white cursor-pointer' />
+                        <Link href="/profile">
+                            <User className='text-white cursor-pointer' />
+                        </Link>
                     </div>
                 ) : (
                     <div className='flex items-center gap-2'>
-                        <Button onClick={() => { console.log("clicking"); openLogin() }}><Lock />Login</Button>
-                        <Button><Lock />Register</Button>
+                        <Button onClick={() =>  openLogin() }><Lock />Login</Button>
+                        <Button onClick={() =>  openRegister() }><Lock />Register</Button>
                     </div>
                 )}
             </div>

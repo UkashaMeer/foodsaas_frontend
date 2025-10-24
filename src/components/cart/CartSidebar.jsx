@@ -1,3 +1,4 @@
+"use client"
 import { jwtDecode } from 'jwt-decode'
 import { v4 as uuidv4 } from 'uuid';
 import { getAllCartItems } from "@/api/cart/getAllCartItems"
@@ -12,11 +13,16 @@ import { useCartState } from "@/store/useCartState"
 import { useEffect, useState } from "react"
 import { ShoppingBag, X } from "lucide-react"
 import { CartItemCard } from './CartItemCard';
+import Link from 'next/link';
+import { useAuthDialogState } from '@/store/useAuthDialogState';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 
 export default function CartSidebar() {
     const { mutate, isPending } = getAllCartItems()
     const { showCart, closeCart, setCount } = useCartState()
+    const { openRegister } = useAuthDialogState()
     const [data, setData] = useState(null)
 
     useEffect(() => {
@@ -58,6 +64,7 @@ export default function CartSidebar() {
 
     }, [showCart])
 
+    const router = useRouter()
     const cartItems = data?.cartItems || []
     const totalAmount = cartItems.reduce((sum, item) => sum + item.subtotal, 0)
     const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -65,6 +72,28 @@ export default function CartSidebar() {
     useEffect(() => {
         setCount(itemCount)
     }, [itemCount])
+
+    const ProceedToCheckOut = () => {
+        let userId = null
+        const token = typeof window !== "undefined" && localStorage.getItem("token")
+
+        if (token) {
+            try {
+                const decoded = jwtDecode(token)
+                userId = decoded?._id
+                if (userId){
+                    router.push("/checkout")
+                    closeCart()
+                    localStorage.removeItem("guestId")
+                }
+            } catch (err) {
+                console.error("JWT Decode Error: ", err)
+            }
+        } else {
+            toast.error("Register before checkout!")
+            openRegister()
+        }
+    }
 
 
     return (
@@ -137,7 +166,7 @@ export default function CartSidebar() {
                             </div>
 
                             {/* Checkout Button */}
-                            <button className="w-full bg-primary text-primary-foreground rounded-lg py-3.5 font-semibold text-base hover:bg-primary/90 transition-colors shadow-md cursor-pointer">
+                            <button onClick={ProceedToCheckOut} className="w-full bg-primary text-primary-foreground rounded-lg py-3.5 font-semibold text-base hover:bg-primary/90 transition-colors shadow-md cursor-pointer">
                                 Proceed to Checkout
                             </button>
                         </div>

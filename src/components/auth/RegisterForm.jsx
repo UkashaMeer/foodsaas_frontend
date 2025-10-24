@@ -1,6 +1,7 @@
 import {
     Dialog,
     DialogContent,
+    DialogTitle,
 } from "@/components/ui/dialog"
 import { useState } from "react"
 import { Input } from "../ui/input"
@@ -12,7 +13,7 @@ import { useAuthDialogState } from "@/store/useAuthDialogState"
 export default function RegisterForm() {
 
     const { mutate, isPending } = useRegister()
-    const {showRegister, closeRegister, openOTP} = useAuthDialogState()
+    const { showRegister, closeRegister, openOTP, openLogin } = useAuthDialogState()
     const [form, setForm] = useState({ name: "", email: "", phoneNumber: "", password: "" })
 
     const handleSubmit = (e) => {
@@ -35,7 +36,7 @@ export default function RegisterForm() {
     return (
         <Dialog className="flex text-center px-4" open={showRegister} onOpenChange={closeRegister}>
             <DialogContent>
-                <h1 className="text-2xl font-bold">Register</h1>
+                <DialogTitle className="text-2xl font-bold">Register</DialogTitle>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-2">
                     <Input
                         type="text"
@@ -75,6 +76,9 @@ export default function RegisterForm() {
                         }
                     </Button>
                 </form>
+                <span className="text-sm text-gray-500 mx-auto">
+                    Already have Accoount? <button className="text-primary cursor-pointer underline" onClick={() => {openLogin(); closeRegister();}}>Login</button>
+                </span>
             </DialogContent>
         </Dialog>
     )
