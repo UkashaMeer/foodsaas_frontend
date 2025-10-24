@@ -63,7 +63,7 @@ export default function BannerSlider({
         {slides.map((s, i) => (
           <div
             key={i}
-            className="w-full flex-shrink-0 flex justify-center bg-black"
+            className="w-full shrink-0 flex justify-center bg-black"
           >
             <img
               src={s.src}

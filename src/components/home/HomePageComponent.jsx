@@ -27,11 +27,6 @@ export default function HomePageComponent() {
         setOpen(true)
     }
 
-
-    if (isLoading) {
-        toast.message("Loading...")
-    }
-
     if (isError) {
         toast.error("Failed to load items." || error)
     }

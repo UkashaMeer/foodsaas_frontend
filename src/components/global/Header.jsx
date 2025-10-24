@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 import LocationComponent from './headerComponents/LocationComponent'
-import CartIcon from './headerComponents/cartIcon'
+import CartIcon from './headerComponents/CartIcon'
 import UserLogin from './headerComponents/UserLogin'
 
 export default function Header() {
