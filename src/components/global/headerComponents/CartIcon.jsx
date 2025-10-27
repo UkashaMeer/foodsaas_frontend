@@ -13,7 +13,7 @@ export default function CartIcon() {
                 </span>
             )}
 
-            <ShoppingBag className='text-white cursor-pointer w-10' />
+            <ShoppingBag className='text-white cursor-pointer w-5 h-5' />
         </div>
     )
 }

@@ -41,7 +41,7 @@ export default function UserLogin() {
                     <DropdownMenu>
                         <DropdownMenuTrigger>
                             <div className='bg-primary p-2 rounded-md relative'>
-                                <User className='text-white cursor-pointer' />
+                                <User className='text-white w-5 h-5 cursor-pointer' />
                             </div>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-[200px]">
