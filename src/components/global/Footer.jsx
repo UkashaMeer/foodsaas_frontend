@@ -60,7 +60,7 @@ export default function Footer() {
                 <ArrowUp className="w-6 h-6 text-white relative z-10" />
             </button>
 
-            <div className="w-[1140px] mx-auto px-6 pt-20 pb-4 relative z-10 text-foreground">
+            <div className="max-w-[1140px] w-full mx-auto px-4 sm:px-6 pt-20 pb-4 relative z-10 text-foreground">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
 
                     {/* Company Info */}
@@ -154,12 +154,13 @@ export default function Footer() {
 
                         <div className="pt-2">
                             <p className="text-sm font-medium mb-2">Subscribe to Our Newsletter</p>
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2">
                                 <Input
                                     type="email"
                                     placeholder="Your email"
+                                    className="w-full sm:flex-1"
                                 />
-                                <Button>Join</Button>
+                                <Button className="w-full sm:w-auto">Join</Button>
                             </div>
                         </div>
                     </div>
