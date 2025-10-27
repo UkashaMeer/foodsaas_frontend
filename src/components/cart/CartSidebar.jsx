@@ -13,7 +13,6 @@ import { useCartState } from "@/store/useCartState"
 import { useEffect, useState } from "react"
 import { ShoppingBag, X } from "lucide-react"
 import { CartItemCard } from './CartItemCard';
-import Link from 'next/link';
 import { useAuthDialogState } from '@/store/useAuthDialogState';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -81,7 +80,7 @@ export default function CartSidebar() {
             try {
                 const decoded = jwtDecode(token)
                 userId = decoded?._id
-                if (userId){
+                if (userId) {
                     router.push("/checkout")
                     closeCart()
                     localStorage.removeItem("guestId")
@@ -100,7 +99,9 @@ export default function CartSidebar() {
         <Sheet open={showCart} onOpenChange={(val) => {
             if (!val) closeCart()
         }}>
-            <SheetContent className="w-full sm:max-w-lg flex flex-col p-0">
+            <SheetContent className="w-full sm:max-w-lg flex flex-col p-0 data-[state=open]:animate-in data-[state=open]:slide-in-from-right
+        data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right
+        duration-300 ease-out">
                 {/* Header */}
                 <SheetHeader className="px-6 py-5 border-b border-border bg-background sticky top-0 z-10">
                     <div className="flex items-center justify-between">

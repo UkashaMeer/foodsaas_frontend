@@ -193,3 +193,7 @@ body {
     letter-spacing: var(--tracking-normal);
   }
 }
+
+[data-state="open"] {
+  overflow: hidden;
+}

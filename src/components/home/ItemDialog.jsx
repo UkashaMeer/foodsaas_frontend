@@ -12,7 +12,7 @@ export default function ItemDialog({ item, open, setOpen }) {
 
     const { mutate, isPending } = useAddToCart()
 
-    const {openCart} = useCartState()
+    const { openCart } = useCartState()
     const [quantity, setQuantity] = useState(1)
     const [selectedAddons, setSelectedAddons] = useState({})
 
@@ -117,7 +117,7 @@ export default function ItemDialog({ item, open, setOpen }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="max-w-3xl w-full max-h-[90vh] p-0 gap-0 bg-white overflow-hidden flex flex-col">
+            <DialogContent className="max-w-3xl w-full max-h-[90vh] p-0 gap-0 bg-white overflow-hidden flex flex-col data-[state=open]:animate-in  data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 ">
                 <div className="relative h-64 overflow-hidden group shrink-0">
                     <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"

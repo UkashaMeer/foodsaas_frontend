@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function ItemCard({ data, onClick }) {
+
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  if (!hydrated) return null;
+
   return (
     <div
       onClick={() => onClick(data)}
@@ -12,14 +17,14 @@ export default function ItemCard({ data, onClick }) {
           alt={data.name}
           className="w-full h-full object-cover"
         />
-        
+
         {/* Discount Badge */}
         {data.isOnDiscount && data.discountPrice && (
           <div className="absolute top-2 right-2 bg-primary text-white px-2 py-0.5 rounded-full text-xs font-semibold animate-pulse shadow-md">
             Sale!
           </div>
         )}
-        
+
         {/* Availability Badge */}
         {!data.isAvailable && (
           <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
@@ -49,7 +54,7 @@ export default function ItemCard({ data, onClick }) {
         {data.averageRating && data.ratingCount && (
           <div className="flex items-center mb-2">
             <svg className="w-3 h-3 text-yellow-400 fill-current transition-transform duration-300 group-hover:scale-125" viewBox="0 0 20 20">
-              <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+              <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
             </svg>
             <span className="ml-1 text-xs font-medium text-gray-700">
               {data.averageRating.toFixed(1)} ({data.ratingCount})
@@ -80,7 +85,7 @@ export default function ItemCard({ data, onClick }) {
           {data.preparationTime && (
             <div className="flex items-center text-xs text-gray-500">
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {data.preparationTime}m
             </div>
@@ -88,13 +93,12 @@ export default function ItemCard({ data, onClick }) {
         </div>
 
         {/* Add to Cart Button */}
-        <button 
+        <button
           disabled={!data.isAvailable}
-          className={`mt-2 w-full py-1.5 rounded-md text-xs font-semibold transition-all duration-300 transform ${
-            data.isAvailable 
-              ? 'bg-primary hover:bg-primary text-white shadow-md hover:shadow-lg' 
+          className={`mt-2 w-full py-1.5 rounded-md text-xs font-semibold transition-all duration-300 transform ${data.isAvailable
+              ? 'bg-primary hover:bg-primary text-white shadow-md hover:shadow-lg'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+            }`}
         >
           {data.isAvailable ? 'Add to Cart' : 'Unavailable'}
         </button>
