@@ -49,15 +49,11 @@ export default function Footer() {
             {/* Scroll to Top Button */}
             <button
                 onClick={scrollToTop}
-                className={`cursor-pointer fixed bottom-8 right-8 z-50 p-4 rounded-full transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'
+                className={`cursor-pointer bg-primary shadow-md fixed bottom-8 right-8 z-50 p-2 rounded-md transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'
                     }`}
-                style={{
-                    background: 'oklch(0.6824 0.2108 37.6975)',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                }}
                 aria-label="Scroll to top"
             >
-                <ArrowUp className="w-6 h-6 text-white relative z-10" />
+                <ArrowUp className="w-5 h-5 text-white relative z-10" />
             </button>
 
             <div className="max-w-[1140px] w-full mx-auto px-4 sm:px-6 pt-20 pb-4 relative z-10 text-foreground">
