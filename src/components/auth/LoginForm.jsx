@@ -21,6 +21,7 @@ export default function LoginForm() {
                 toast.success("Login Successfully.")
                 localStorage.setItem("token", data.token)
                 localStorage.removeItem("guestId")
+                setForm({ email: "", password: "" })
                 checkLogin()
                 closeLogin()
             },

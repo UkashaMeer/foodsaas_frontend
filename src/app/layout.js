@@ -4,6 +4,7 @@ import { Providers } from "@/providers/Providers";
 import { Toaster } from "sonner";
 import Header from "@/components/global/Header";
 import CartSidebar from "@/components/cart/CartSidebar";
+import Footer from "@/components/global/Footer";
 
 const PoppinFont = Poppins({
   variable: "--font-poppins-sans",
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
         <Providers>
           <Header />
           {children}
+          <Footer />
           <CartSidebar />
         </Providers>
       </body>

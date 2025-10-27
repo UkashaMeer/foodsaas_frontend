@@ -1,20 +1,36 @@
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import LoginForm from "@/components/auth/LoginForm";
 import { Button } from "@/components/ui/button";
 import { useAuthDialogState } from "@/store/useAuthDialogState";
 import { useUserLoginState } from "@/store/useUserLoginState";
-import { Lock, User } from "lucide-react";
-import Link from "next/link";
+import { Lock, LogOut, User } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function UserLogin() {
-    const { isLogin, checkLogin } = useUserLoginState();
+    const { isLogin, checkLogin, removeLogin } = useUserLoginState();
     const { openLogin, openRegister } = useAuthDialogState()
     const [hydrated, setHydrated] = useState(false);
+    const router = useRouter()
 
     useEffect(() => {
         checkLogin();
         setHydrated(true);
-    }, [checkLogin]);
+    }, [checkLogin, isLogin]);
+
+    const handleLogOut = () => {
+        const token = typeof window !== "undefined" && localStorage.getItem("token")
+        if (token) {
+            removeLogin()
+            toast.message("You logged out successfully.")
+        }
+    }
 
     if (!hydrated) return null;
 
@@ -22,15 +38,28 @@ export default function UserLogin() {
         <>
             <div className='flex items-center gap-2'>
                 {isLogin ? (
-                    <div className='bg-primary p-2 rounded-md relative'>
-                        <Link href="/profile">
-                            <User className='text-white cursor-pointer' />
-                        </Link>
-                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger>
+                            <div className='bg-primary p-2 rounded-md relative'>
+                                <User className='text-white cursor-pointer' />
+                            </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[200px]">
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/profile")}>
+                                <User />
+                                Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" onClick={handleLogOut}>
+                                <LogOut />
+                                Logout
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
                 ) : (
                     <div className='flex items-center gap-2'>
-                        <Button onClick={() =>  openLogin() }><Lock />Login</Button>
-                        <Button onClick={() =>  openRegister() }><Lock />Register</Button>
+                        <Button onClick={() => openLogin()}><Lock />Login</Button>
+                        <Button onClick={() => openRegister()}><Lock />Register</Button>
                     </div>
                 )}
             </div>
