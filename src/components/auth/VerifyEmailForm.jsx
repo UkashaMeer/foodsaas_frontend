@@ -3,7 +3,6 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from "@/components/ui/input-otp"
-
 import {
     Dialog,
     DialogContent,
@@ -13,12 +12,30 @@ import { useState } from "react"
 import { useVerifyEmail } from "@/api/auth/useVerifyEmail"
 import { useAuthDialogState } from "@/store/useAuthDialogState"
 import { toast } from "sonner"
+import { useResendOTP } from "@/api/auth/useResendOTP"
+import { useUserLoginState } from "@/store/useUserLoginState"
 
 export default function VerifyEmailForm() {
 
     const { mutate, isPending } = useVerifyEmail()
+    const { mutate: resendOTPMutate, isPending: resendOTPIsPending } = useResendOTP()
     const { closeOTP, showOTP } = useAuthDialogState()
+    const { checkLogin } = useUserLoginState();
     const [otp, setOtp] = useState()
+
+    const handleResendOTP = () => {
+        const email = localStorage.getItem("email")
+        const payload = {
+            email: email,
+        }
+
+        resendOTPMutate(payload, {
+            onSuccess: (res) => {
+                toast.success("OTP resend to your email.")
+            },
+            onError: (err) => toast.error(err?.response?.data?.error || "Something went wrong!"),
+        })
+    }
 
     const handleSubmit = (e) => {
         e.preventDefault()
@@ -32,12 +49,11 @@ export default function VerifyEmailForm() {
         mutate(payload, {
             onSuccess: (res) => {
                 toast.success("OTP Verified Successfully.")
-                
-                localStorage.setItem("token", res.token)
 
+                localStorage.setItem("token", res.token)
                 localStorage.removeItem("email")
                 localStorage.removeItem("guestId")
-
+                checkLogin()
                 closeOTP()
             },
             onError: (err) => toast.error(err?.response?.data?.error || "Something went wrong!"),
@@ -83,9 +99,13 @@ export default function VerifyEmailForm() {
                                 isPending ? "Verifying OTP..." : "Verify OTP"
                             }
                         </Button>
-                        <Button className="mt-4 cursor-pointer">Resend OTP</Button>
                     </div>
                 </form>
+                <Button className="mt-4 cursor-pointer" onClick={handleResendOTP}>
+                    {
+                        resendOTPIsPending ? "Resending OTP" : "Resend OTP"
+                    }
+                </Button>
             </DialogContent>
         </Dialog>
     )

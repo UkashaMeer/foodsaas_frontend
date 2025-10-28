@@ -9,12 +9,14 @@ import { getAllCartItems } from '@/api/cart/getAllCartItems';
 import { usePlaceOrder } from '@/api/checkout/usePlaceOrder';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useCartState } from '@/store/useCartState';
 
 export default function CheckoutPage() {
 
     const router = useRouter()
 
     const { mutate } = getAllCartItems()
+    const { setCount } = useCartState()
     const { mutate: placeOrderMutate, isPending } = usePlaceOrder()
     const [step, setStep] = useState(1)
     const [paymentMethod, setPaymentMethod] = useState('cod')
@@ -52,6 +54,7 @@ export default function CheckoutPage() {
         mutate(payload, {
             onSuccess: (res) => {
                 setCartItems(res?.cartItems)
+                setCount(0)
             },
             onError: () => {
                 console.error("Something went wrong")
@@ -118,7 +121,7 @@ export default function CheckoutPage() {
                 onSuccess: (res) => {
                     console.log(res)
                     toast.success("Congratulations order is placed successfully!")
-                    router.push("/")
+                    router.push("/profile")
 
                 },
                 onError: (err) => {
