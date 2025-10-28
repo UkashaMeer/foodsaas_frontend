@@ -28,6 +28,7 @@ export default function UserLogin() {
         const token = typeof window !== "undefined" && localStorage.getItem("token")
         if (token) {
             removeLogin()
+            router.push("/")
             toast.message("You logged out successfully.")
         }
     }
