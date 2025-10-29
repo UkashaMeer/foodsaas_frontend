@@ -6,7 +6,7 @@ import {
 import { useState } from "react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
-import { useRegister } from "@/api/auth/useRegister"
+import { useRegister } from "@/api/user/auth/useRegister"
 import { toast } from "sonner"
 import { useAuthDialogState } from "@/store/useAuthDialogState"
 

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import React, { useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Plus, Minus, ShoppingCart, Clock, Star } from 'lucide-react'
-import { useAddToCart } from '@/api/cart/useAddToCart'
+import { useAddToCart } from '@/api/user/cart/useAddToCart'
 import { toast } from 'sonner';
 import { useCartState } from '@/store/useCartState';
 

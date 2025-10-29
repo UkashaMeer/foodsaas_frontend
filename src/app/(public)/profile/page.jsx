@@ -1,6 +1,6 @@
 "use client"
-import { useUser } from '@/api/auth/useUser'
-import { useGetOrderByUserId } from '@/api/order/useGetOrderByUserId'
+import { useUser } from '@/api/user/auth/useUser'
+import { useGetOrderByUserId } from '@/api/user/order/useGetOrderByUserId'
 import EditProfile from '@/components/profile-page/EditProfile'
 import MyOrders from '@/components/profile-page/MyOrders'
 import { Spinner } from '@/components/ui/spinner'

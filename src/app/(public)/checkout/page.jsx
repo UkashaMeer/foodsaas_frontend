@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react'
 import { ChevronRight, MapPin, Phone, User, CreditCard, Wallet, Check, Clock, Package } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { getAllCartItems } from '@/api/cart/getAllCartItems';
-import { usePlaceOrder } from '@/api/checkout/usePlaceOrder';
+import { getAllCartItems } from '@/api/user/cart/getAllCartItems';
+import { usePlaceOrder } from '@/api/user/checkout/usePlaceOrder';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useCartState } from '@/store/useCartState';

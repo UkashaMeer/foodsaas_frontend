@@ -2,25 +2,30 @@ import { useAuthDialogState } from "@/store/useAuthDialogState";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
-import { useLogin } from "@/api/auth/useLogin";
+import { useLogin } from "@/api/user/auth/useLogin";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useUserLoginState } from "@/store/useUserLoginState";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
     const { mutate, isPending} = useLogin()
     const { checkLogin } = useUserLoginState()
     const { showLogin, closeLogin, openRegister } = useAuthDialogState()
     const [form, setForm] = useState({ email: "", password: "" }) 
+    const router  = useRouter()
 
     const handleSubmit = (e) => {
         e.preventDefault()
 
         mutate(form, ({
-            onSuccess: (data) => {
+            onSuccess: (res) => {
                 toast.success("Login Successfully.")
-                localStorage.setItem("token", data.token)
+                localStorage.setItem("token", res.token)
                 localStorage.removeItem("guestId")
+                if (res.data.role === "OWNER"){
+                    router.push("/admin/dashboard")
+                }
                 setForm({ email: "", password: "" })
                 checkLogin()
                 closeLogin()

@@ -1,7 +1,7 @@
 "use client"
 import { jwtDecode } from 'jwt-decode'
 import { v4 as uuidv4 } from 'uuid';
-import { getAllCartItems } from "@/api/cart/getAllCartItems"
+import { getAllCartItems } from "@/api/user/cart/getAllCartItems"
 import {
     Sheet,
     SheetClose,

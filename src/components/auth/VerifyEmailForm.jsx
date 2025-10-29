@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "../ui/button"
 import { useState } from "react"
-import { useVerifyEmail } from "@/api/auth/useVerifyEmail"
+import { useVerifyEmail } from "@/api/user/auth/useVerifyEmail"
 import { useAuthDialogState } from "@/store/useAuthDialogState"
 import { toast } from "sonner"
-import { useResendOTP } from "@/api/auth/useResendOTP"
+import { useResendOTP } from "@/api/user/auth/useResendOTP"
 import { useUserLoginState } from "@/store/useUserLoginState"
 
 export default function VerifyEmailForm() {

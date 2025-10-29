@@ -1,9 +1,9 @@
 import { jwtDecode } from 'jwt-decode'
 import { v4 as uuidv4 } from 'uuid';
-import { deleteCartItem } from '@/api/cart/deleteCartItem';
+import { deleteCartItem } from '@/api/user/cart/deleteCartItem';
 import { toast } from 'sonner';
 import { Plus, Minus, Trash2, X } from "lucide-react"
-import { updateCartItem } from '@/api/cart/updateCartItem';
+import { updateCartItem } from '@/api/user/cart/updateCartItem';
 
 export const CartItemCard = ({ item, setData }) => {
     const { mutate } = deleteCartItem()

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import BannerSlider from "./BannerSlider";
-import { getItems } from "@/api/items/getItems";
+import { getItems } from "@/api/user/items/getItems";
 import { toast } from "sonner";
 import ItemCard from "./ItemCard";
 import ItemDialog from "./ItemDialog";

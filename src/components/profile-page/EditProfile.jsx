@@ -8,7 +8,7 @@ import { Input } from "../ui/input";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { formatTime } from "@/utils/formatTime";
-import { useUpdateUser } from "@/api/auth/useUpdateUser";
+import { useUpdateUser } from "@/api/user/auth/useUpdateUser";
 import { toast } from "sonner";
 
 export default function EditProfile({ user }) {
