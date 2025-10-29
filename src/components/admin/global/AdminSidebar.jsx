@@ -20,20 +20,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
 import { useRouter } from "next/navigation";
-
-const menuItems = [
-  { id: "dashboard", url: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
-  { id: "categories", url: "/admin/dashboard/categories", label: "Categories", icon: Package, badge: null },
-  { id: "products", url: "/admin/dashboard/products", label: "Products", icon: Package, badge: "12" },
-  { id: "orders", url: "/admin/dashboard/orders", label: "Orders", icon: ShoppingCart, badge: "5" },
-  { id: "riders", url: "/admin/dashboard", label: "Riders", icon: Users, badge: "8" },
-  { id: "payments", url: "/admin/dashboard", label: "Payments", icon: CreditCard, badge: null },
-  { id: "analytics", url: "/admin/dashboard", label: "Analytics", icon: BarChart3, badge: null },
-  { id: "settings", url: "/admin/dashboard", label: "Settings", icon: Settings, badge: null },
-];
+import { useCategoryStore } from "@/store/useCategoryStore";
 
 export const AdminSidebar = () => {
-  
+
   const {
     sidebarCollapsed,
     activeMenuItem,
@@ -41,6 +31,19 @@ export const AdminSidebar = () => {
     setActiveMenuItem,
   } = useAdminStore();
   const router = useRouter()
+
+  const { categories } = useCategoryStore()
+
+  const menuItems = [
+    { id: "dashboard", url: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
+    { id: "categories", url: "/admin/dashboard/categories", label: "Categories", icon: Package, badge: categories?.length },
+    { id: "products", url: "/admin/dashboard/products", label: "Products", icon: Package, badge: "12" },
+    { id: "orders", url: "/admin/dashboard/orders", label: "Orders", icon: ShoppingCart, badge: "5" },
+    { id: "riders", url: "/admin/dashboard", label: "Riders", icon: Users, badge: "8" },
+    { id: "payments", url: "/admin/dashboard", label: "Payments", icon: CreditCard, badge: null },
+    { id: "analytics", url: "/admin/dashboard", label: "Analytics", icon: BarChart3, badge: null },
+    { id: "settings", url: "/admin/dashboard", label: "Settings", icon: Settings, badge: null },
+  ];
 
   return (
     <TooltipProvider delayDuration={0}>
