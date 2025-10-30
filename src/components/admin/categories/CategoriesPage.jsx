@@ -19,9 +19,9 @@ export const CategoriesPage = ({ categoriesData }) => {
   
   // Zustand store se state aur actions le rahe hain
   const {
-    categories,
-    filteredCategories,
-    selectedCategories,
+    categories = [],
+    filteredCategories = [],
+    selectedCategories = [],
     searchQuery,
     statusFilter,
     currentPage,
@@ -132,7 +132,7 @@ export const CategoriesPage = ({ categoriesData }) => {
           onStatusFilterChange={setStatusFilter}
           onAddCategory={handleAddCategory}
           onExportCSV={() => handleExportCSV(filteredCategories)}
-          selectedCount={selectedCategories.length}
+          selectedCount={selectedCategories?.length}
           onBulkDelete={handleBulkDelete}
           onBulkToggle={handleBulkToggle}
           isMobile={isMobile}
