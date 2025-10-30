@@ -18,8 +18,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useCreateItem } from "@/api/admin/product/useCreateItem";
+import { Plus, Minus, Trash2 } from "lucide-react";
+import { useUpdateItem } from "@/api/admin/product/useUpdateItem";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ItemFormSheet({ item, open, onOpenChange, onSave, categories }) {
+
+  const queryClient = useQueryClient();
+  const { mutate: createItemMutate, isPending: createItemIsPending } = useCreateItem()
+  const { mutate: updateItemMutate, isPending: updateItemIsPending } = useUpdateItem()
   const [formData, setFormData] = useState({
     name: "",
     details: "",
@@ -31,12 +39,12 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
     images: [""],
     addons: []
   });
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState("https://placehold.co/600x400");
+   const isSubmitting = createItemIsPending || updateItemIsPending;
 
   useEffect(() => {
-    if (item) {
-      console.log("Editing item:", item);
+    if (item && open) {
+      console.log("Editing item addons:", item.addons); // Debug log
       setFormData({
         name: item.name || "",
         details: item.details || "",
@@ -48,8 +56,8 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
         images: item.images && item.images.length > 0 ? item.images : [""],
         addons: item.addons || []
       });
-      setImagePreviews(item.images || []);
-    } else {
+      setImagePreview(item.images && item.images.length > 0 ? item.images[0] : "https://placehold.co/600x400");
+    } else if (open) {
       setFormData({
         name: "",
         details: "",
@@ -61,11 +69,10 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
         images: [""],
         addons: []
       });
-      setImagePreviews([]);
+      setImagePreview("https://placehold.co/600x400");
     }
   }, [item, open]);
 
-  // Handle keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && open) {
@@ -79,77 +86,119 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    try {
-      // Validation
-      if (!formData.name.trim()) {
-        toast.error("Item name is required");
-        return;
-      }
-      if (!formData.price || isNaN(formData.price) || parseFloat(formData.price) <= 0) {
-        toast.error("Valid price is required");
-        return;
-      }
-      if (!formData.categoryId) {
-        toast.error("Category is required");
-        return;
-      }
-      if (formData.isOnDiscount && (!formData.discountPrice || isNaN(formData.discountPrice) || parseFloat(formData.discountPrice) <= 0)) {
-        toast.error("Valid discount price is required when discount is enabled");
-        return;
-      }
+    if (item) {
+      // ✅ FIXED: Process addons properly
+      const processedAddons = formData.addons.map(addon => ({
+        name: addon.name || "",
+        isRequired: addon.isRequired || false,
+        maxSelectable: addon.maxSelectable || 1,
+        options: (addon.options || []).map(option => ({
+          name: option.name || "",
+          price: parseFloat(option.price) || 0,
+          discountPrice: option.discountPrice ? parseFloat(option.discountPrice) : null,
+          isAvailable: option.isAvailable !== undefined ? option.isAvailable : true
+        })).filter(option => option.name && option.price > 0)
+      })).filter(addon => addon.name);
 
-      const submitData = {
-        ...formData,
+      const payload = {
+        name: formData.name,
         price: parseFloat(formData.price),
-        discountPrice: formData.isOnDiscount ? parseFloat(formData.discountPrice) : null,
-        images: formData.images.filter(img => img.trim() !== ""),
-        categoryName: categories.find(cat => cat._id === formData.categoryId)?.name || ""
-      };
+        discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null, // ✅ This should be discountPrice
+        details: formData.details,
+        categoryId: formData.categoryId,
+        isOnDiscount: formData.isOnDiscount,
+        isAvailable: formData.isAvailable,
+        addons: processedAddons
+      }
 
-      console.log("Submitting item:", submitData);
-      await onSave(submitData, !!item);
-      toast.success(`Item ${item ? 'updated' : 'created'} successfully`);
-    } catch (error) {
-      toast.error("Failed to save item");
-      console.error("Save error:", error);
-    } finally {
-      setIsSubmitting(false);
+      const file = formData.images[0] instanceof File ? formData.images[0] : null;
+      const id = item._id;
+
+      console.log("🚀 Sending UPDATE payload:", {
+        id,
+        payload,
+        addonsCount: processedAddons.length,
+        discountPrice: payload.discountPrice,
+        hasFile: !!file
+      });
+
+      updateItemMutate({ id, payload, file }, {
+        onSuccess: (res) => {
+          console.log("✅ Update success:", res);
+          toast.success("Item updated successfully.");
+          onOpenChange(false);
+          queryClient.invalidateQueries(["items"]);
+        },
+        onError: (error) => {
+          console.error("❌ Update error:", error);
+          toast.error(error.response?.data?.error || "Something went wrong while updating item!");
+        }
+      });
+
+    } else {
+      // Create item logic (same as before)
+      const processedAddons = formData.addons.map(addon => ({
+        name: addon.name || "",
+        isRequired: addon.isRequired || false,
+        maxSelectable: addon.maxSelectable || 1,
+        options: (addon.options || []).map(option => ({
+          name: option.name || "",
+          price: parseFloat(option.price) || 0,
+          discountPrice: option.discountPrice ? parseFloat(option.discountPrice) : null,
+          isAvailable: option.isAvailable !== undefined ? option.isAvailable : true
+        })).filter(option => option.name && option.price > 0)
+      })).filter(addon => addon.name);
+
+      const payload = {
+        name: formData.name,
+        price: parseFloat(formData.price),
+        discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
+        details: formData.details,
+        categoryId: formData.categoryId,
+        isOnDiscount: formData.isOnDiscount,
+        isAvailable: formData.isAvailable,
+        addons: processedAddons
+      }
+
+      const file = formData.images[0] instanceof File ? formData.images[0] : null;
+
+      createItemMutate({ payload, file }, {
+        onSuccess: (res) => {
+          toast.success("Item Created Successfully.");
+          onOpenChange(false);
+          setFormData({
+            name: "",
+            details: "",
+            price: "",
+            discountPrice: "",
+            isOnDiscount: false,
+            isAvailable: true,
+            categoryId: "",
+            images: [""],
+            addons: []
+          });
+          queryClient.invalidateQueries(["items"]);
+        },
+        onError: (error) => {
+          console.error("Create item error:", error);
+          toast.error(error.response?.data?.error || "Something went wrong while creating Item.");
+        }
+      });
     }
   };
 
-  const handleImageChange = (index, value) => {
-    const newImages = [...formData.images];
-    newImages[index] = value;
-    setFormData(prev => ({ ...prev, images: newImages }));
 
-    // Update previews
-    if (value.trim()) {
-      const newPreviews = [...imagePreviews];
-      newPreviews[index] = value;
-      setImagePreviews(newPreviews);
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      setFormData(prev => ({
+        ...prev,
+        images: [file],
+      }));
     }
-  };
-
-  const addImageField = () => {
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ""]
-    }));
-  };
-
-  const removeImageField = (index) => {
-    const newImages = formData.images.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, images: newImages }));
-    setImagePreviews(newPreviews);
-  };
-
-  const handleAddonChange = (index, field, value) => {
-    const newAddons = [...formData.addons];
-    newAddons[index] = { ...newAddons[index], [field]: value };
-    setFormData(prev => ({ ...prev, addons: newAddons }));
   };
 
   const addAddon = () => {
@@ -169,6 +218,41 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
     setFormData(prev => ({ ...prev, addons: newAddons }));
   };
 
+  const handleAddonChange = (index, field, value) => {
+    const newAddons = [...formData.addons];
+    newAddons[index] = { ...newAddons[index], [field]: value };
+    setFormData(prev => ({ ...prev, addons: newAddons }));
+  };
+
+  const addOptionToAddon = (addonIndex) => {
+    const newAddons = [...formData.addons];
+    if (!newAddons[addonIndex].options) {
+      newAddons[addonIndex].options = [];
+    }
+    newAddons[addonIndex].options.push({
+      name: "",
+      price: "",
+      discountPrice: "",
+      isAvailable: true
+    });
+    setFormData(prev => ({ ...prev, addons: newAddons }));
+  };
+
+  const removeOptionFromAddon = (addonIndex, optionIndex) => {
+    const newAddons = [...formData.addons];
+    newAddons[addonIndex].options = newAddons[addonIndex].options.filter((_, i) => i !== optionIndex);
+    setFormData(prev => ({ ...prev, addons: newAddons }));
+  };
+
+  const handleOptionChange = (addonIndex, optionIndex, field, value) => {
+    const newAddons = [...formData.addons];
+    newAddons[addonIndex].options[optionIndex] = {
+      ...newAddons[addonIndex].options[optionIndex],
+      [field]: value
+    };
+    setFormData(prev => ({ ...prev, addons: newAddons }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -182,7 +266,7 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
           {/* Basic Information */}
           <div className="space-y-4">
             <h4 className="font-medium text-foreground">Basic Information</h4>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Name */}
               <div className="md:col-span-2">
@@ -194,16 +278,18 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
                   placeholder="Enter item name"
                   className="mt-1"
                   disabled={isSubmitting}
+                  required
                 />
               </div>
 
               {/* Category */}
               <div>
                 <Label htmlFor="category">Category *</Label>
-                <Select 
-                  value={formData.categoryId} 
+                <Select
+                  value={formData.categoryId}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
                   disabled={isSubmitting}
+                  required
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select category" />
@@ -225,11 +311,13 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
                   id="price"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={formData.price}
                   onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                   placeholder="0.00"
                   className="mt-1"
                   disabled={isSubmitting}
+                  required
                 />
               </div>
             </div>
@@ -270,11 +358,13 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
                   id="discountPrice"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={formData.discountPrice}
                   onChange={(e) => setFormData(prev => ({ ...prev, discountPrice: e.target.value }))}
                   placeholder="0.00"
                   className="mt-1"
                   disabled={isSubmitting}
+                  required={formData.isOnDiscount}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   The discounted price that customers will pay
@@ -284,60 +374,29 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
           </div>
 
           {/* Images */}
-          <div className="space-y-4">
-            <Label>Images</Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Enter image URLs separated by commas or add multiple image fields
-            </p>
-            
-            {formData.images.map((image, index) => (
-              <div key={index} className="flex gap-2">
+          <div>
+            <Label>Item Image</Label>
+            <div className="flex flex-col gap-2 items-start space-x-4 mt-2">
+              <div className="shrink-0">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-60 h-40 rounded-lg object-cover border"
+                />
+              </div>
+              <div className="flex-1">
                 <Input
-                  value={image}
-                  onChange={(e) => handleImageChange(index, e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="flex-1"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="text-sm"
                   disabled={isSubmitting}
                 />
-                {formData.images.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeImageField(index)}
-                    disabled={isSubmitting}
-                  >
-                    Remove
-                  </Button>
-                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  PNG, JPG, GIF up to 10MB
+                </p>
               </div>
-            ))}
-            
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addImageField}
-              disabled={isSubmitting}
-            >
-              Add Another Image
-            </Button>
-
-            {/* Image Previews */}
-            {imagePreviews.filter(img => img.trim()).length > 0 && (
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {imagePreviews.filter(img => img.trim()).map((preview, index) => (
-                  <img
-                    key={index}
-                    src={preview}
-                    alt={`Preview ${index + 1}`}
-                    className="h-20 w-full object-cover rounded border"
-                    onError={(e) => {
-                      e.target.src = "/placeholder-food.jpg";
-                    }}
-                  />
-                ))}
-              </div>
-            )}
+            </div>
           </div>
 
           {/* Status */}
@@ -356,64 +415,131 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
           {/* Addons Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Addons</Label>
+              <div>
+                <Label>Addons</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add customization options for this item
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={addAddon}
                 disabled={isSubmitting}
+                className="flex items-center gap-2"
               >
+                <Plus className="h-4 w-4" />
                 Add Addon
               </Button>
             </div>
 
             {formData.addons.map((addon, index) => (
-              <div key={index} className="border rounded-lg p-4 space-y-3">
+              <div key={index} className="border rounded-lg p-4 space-y-4 bg-muted/5">
                 <div className="flex justify-between items-start">
-                  <h5 className="font-medium">Addon {index + 1}</h5>
+                  <h5 className="font-medium">Addon Group {index + 1}</h5>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => removeAddon(index)}
                     disabled={isSubmitting}
+                    className="text-primary hover:text-primary"
                   >
-                    Remove
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <Label>Addon Name</Label>
+                  <div className="flex flex-col gap-2">
+                    <Label>Addon Name *</Label>
                     <Input
                       value={addon.name}
                       onChange={(e) => handleAddonChange(index, 'name', e.target.value)}
                       placeholder="e.g., Extra Toppings"
                       disabled={isSubmitting}
+                      required
                     />
                   </div>
-                  <div>
+                  <div className="flex flex-col gap-2">
                     <Label>Max Selectable</Label>
                     <Input
                       type="number"
+                      min="1"
                       value={addon.maxSelectable}
                       onChange={(e) => handleAddonChange(index, 'maxSelectable', parseInt(e.target.value) || 1)}
-                      min="1"
                       disabled={isSubmitting}
                     />
                   </div>
-                  <div className="flex items-end space-x-2">
-                    <Checkbox
-                      id={`required-${index}`}
-                      checked={addon.isRequired}
-                      onCheckedChange={(checked) => handleAddonChange(index, 'isRequired', checked)}
+                </div>
+                <div className="flex items-center gap-2 space-x-2">
+                  <Checkbox
+                    id={`required-${index}`}
+                    checked={addon.isRequired}
+                    onCheckedChange={(checked) => handleAddonChange(index, 'isRequired', checked)}
+                    disabled={isSubmitting}
+                  />
+                  <Label htmlFor={`required-${index}`} className="font-normal text-sm">
+                    Required
+                  </Label>
+                </div>
+
+                {/* Options for this addon */}
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <Label>Options</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addOptionToAddon(index)}
                       disabled={isSubmitting}
-                    />
-                    <Label htmlFor={`required-${index}`} className="font-normal text-sm">
-                      Required
-                    </Label>
+                      className="flex items-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Add Option
+                    </Button>
                   </div>
+
+                  {addon.options && addon.options.map((option, optIndex) => (
+                    <div key={optIndex} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3 p-3 border rounded bg-background">
+                      <div className="md:col-span-2 flex flex-col gap-2">
+                        <Label>Option Name *</Label>
+                        <Input
+                          placeholder="e.g., Cheese"
+                          value={option.name}
+                          onChange={(e) => handleOptionChange(index, optIndex, 'name', e.target.value)}
+                          disabled={isSubmitting}
+                          required
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label>Price (Rs.) *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={option.price}
+                          onChange={(e) => handleOptionChange(index, optIndex, 'price', e.target.value)}
+                          disabled={isSubmitting}
+                          required
+                        />
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeOptionFromAddon(index, optIndex)}
+                          disabled={isSubmitting}
+                          className="text-destructive hover:text-destructive flex-1"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
@@ -429,11 +555,11 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Saving..." : (item ? "Update" : "Create")} Item
+              {isSubmitting ? "Creating..." : (item ? "Update" : "Create")} Item
               <span className="text-xs ml-2 opacity-60">Ctrl+Enter</span>
             </Button>
           </div>

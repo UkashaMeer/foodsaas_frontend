@@ -13,6 +13,7 @@ export const useItemStore = create(
       categoryFilter: "all",
       availabilityFilter: "all",
       discountFilter: "all",
+      sortBy: "newest",
       currentPage: 1,
       itemsPerPage: 10,
       isLoading: false,
@@ -32,14 +33,20 @@ export const useItemStore = create(
       // Initialize with data
       initializeData: (data) => {
         if (!data || !data.categories) return;
-        
+
         const categories = data.categories;
         // Flatten all items from categories and add categoryName
-        const allItems = categories.flatMap(category => 
+        const allItems = categories.flatMap(category =>
           category.items.map(item => ({
             ...item,
             categoryName: category.name,
-            categoryId: category._id
+            categoryId: category._id,
+            createdAt: item.createdAt || item._id ?
+              (item._id.toString().length === 24 ?
+                new Date(parseInt(item._id.toString().substring(0, 8), 16) * 1000).toISOString() :
+                new Date().toISOString()
+              ) :
+              new Date().toISOString()
           }))
         );
 
@@ -51,6 +58,7 @@ export const useItemStore = create(
       },
 
       // Setters
+      setSortBy: (sortBy) => set({ sortBy }),
       setItems: (items) => set({ items }),
       setCategories: (categories) => set({ categories }),
       setFilteredItems: (filteredItems) => set({ filteredItems }),
@@ -77,7 +85,8 @@ export const useItemStore = create(
             search: searchQuery,
             category: categoryFilter,
             availability: availabilityFilter,
-            discount: discountFilter
+            discount: discountFilter,
+            sortBy: sortBy
           }
         });
       },
@@ -89,7 +98,8 @@ export const useItemStore = create(
           searchQuery: lastUsedFilters.search,
           categoryFilter: lastUsedFilters.category,
           availabilityFilter: lastUsedFilters.availability,
-          discountFilter: lastUsedFilters.discount
+          discountFilter: lastUsedFilters.discount,
+          sortBy: lastUsedFilters.sortBy
         });
       },
 
@@ -213,7 +223,7 @@ export const useItemStore = create(
 
       // Filtering and Search
       applyFilters: () => {
-        const { items, searchQuery, categoryFilter, availabilityFilter, discountFilter } = get();
+        const { items, searchQuery, categoryFilter, availabilityFilter, discountFilter, sortBy } = get();
 
         let results = items;
 
@@ -244,10 +254,40 @@ export const useItemStore = create(
           results = results.filter(item => item.isOnDiscount);
         }
 
+        results = get().applySorting(results, sortBy);
+
         set({ filteredItems: results, currentPage: 1 });
         get().saveFilters();
       },
 
+      applySorting: (items, sortType) => {
+        const sortedItems = [...items];
+
+        switch (sortType) {
+          case "newest":
+            return sortedItems.sort((a, b) => {
+              const dateA = new Date(a.createdAt || a._id || 0);
+              const dateB = new Date(b.createdAt || b._id || 0);
+              return dateB - dateA;
+            });
+          case "oldest":
+            return sortedItems.sort((a, b) => {
+              const dateA = new Date(a.createdAt || a._id || 0);
+              const dateB = new Date(b.createdAt || b._id || 0);
+              return dateA - dateB;
+            });
+          case "name_asc":
+            return sortedItems.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          case "name_desc":
+            return sortedItems.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+          case "price_low":
+            return sortedItems.sort((a, b) => (a.price || 0) - (b.price || 0));
+          case "price_high":
+            return sortedItems.sort((a, b) => (b.price || 0) - (a.price || 0));
+          default:
+            return sortedItems;
+        }
+      },
       // Pagination
       getPaginatedItems: () => {
         const { filteredItems, currentPage, itemsPerPage } = get();
@@ -284,10 +324,11 @@ export const useItemStore = create(
           filteredItems: updatedItems
         });
       }
+
     }),
     {
       name: 'item-storage',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         items: state.items,
         categories: state.categories,
         lastUsedFilters: state.lastUsedFilters

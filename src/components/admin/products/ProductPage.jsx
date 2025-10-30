@@ -14,6 +14,7 @@ import DeleteConfirmationDialog from "./DeleteConfirmationDialog";
 import ImageLightboxModal from "./ImageLightboxModal";
 import { handleExportCSV } from "./utils/handleExportCsv";
 import { useItemStore } from "@/store/useItemStore";
+import { useDeleteItem } from "@/api/admin/product/useDeleteItem";
 
 export default function ProductsPage() {
   const {
@@ -23,6 +24,7 @@ export default function ProductsPage() {
     categoryFilter,
     availabilityFilter,
     discountFilter,
+    sortBy,
     currentPage,
     itemsPerPage,
     isLoading,
@@ -40,6 +42,7 @@ export default function ProductsPage() {
     setLightboxOpen,
     setSelectedItem,
     setIsMobile,
+    setSortBy,
     handleViewItem,
     handleEditItem,
     handleAddItem,
@@ -56,6 +59,8 @@ export default function ProductsPage() {
     items
   } = useItemStore();
 
+  const { mutate, isPending } = useDeleteItem()
+
   const paginatedItems = getPaginatedItems();
   const totalPages = getTotalPages();
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -66,7 +71,7 @@ export default function ProductsPage() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -79,7 +84,7 @@ export default function ProductsPage() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, categoryFilter, availabilityFilter, discountFilter, items, applyFilters]);
+  }, [searchQuery, categoryFilter, availabilityFilter, discountFilter, sortBy, items, applyFilters]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -104,10 +109,10 @@ export default function ProductsPage() {
 
   // Handle CSV Export
   const handleExport = () => {
-    const dataToExport = selectedItems.length > 0 
+    const dataToExport = selectedItems.length > 0
       ? items.filter(item => selectedItems.includes(item._id))
       : filteredItems;
-    
+
     handleExportCSV(dataToExport);
     toast.success(`Exported ${dataToExport.length} items successfully`);
   };
@@ -136,6 +141,8 @@ export default function ProductsPage() {
           onAvailabilityFilterChange={(value) => useItemStore.setState({ availabilityFilter: value })}
           discountFilter={discountFilter}
           onDiscountFilterChange={(value) => useItemStore.setState({ discountFilter: value })}
+          sortBy={sortBy}
+          onSortChange={(value) => useItemStore.setState({ sortBy: value })}
           itemsPerPage={itemsPerPage}
           onItemsPerPageChange={(value) => useItemStore.setState({ itemsPerPage: value })}
           onAddItem={handleAddItem}
@@ -281,25 +288,15 @@ export default function ProductsPage() {
           onOpenChange={setDeleteDialogOpen}
           onConfirm={() => {
             if (selectedItem) {
-              handleDeleteItem(selectedItem._id);
-              toast.success("Item deleted successfully", {
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    // Implement undo logic here
-                  }
+              mutate(selectedItem._id, {
+                onSuccess: () => {
+                  handleDeleteItem(selectedItem._id);
+                  toast.success("Item deleted successfully");
+                },
+                onError: () => {
+                  toast.error("Something went wrong while deleting item!")
                 }
-              });
-            } else if (selectedItems.length > 0) {
-              handleBulkDelete();
-              toast.success(`${selectedItems.length} items deleted successfully`, {
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    // Implement undo logic here
-                  }
-                }
-              });
+              })
             }
           }}
           item={selectedItem}

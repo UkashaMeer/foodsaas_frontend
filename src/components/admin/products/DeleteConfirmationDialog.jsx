@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { useDeleteItem } from "@/api/admin/product/useDeleteItem";
 
 export default function DeleteConfirmationDialog({
   open,

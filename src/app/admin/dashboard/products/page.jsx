@@ -2,7 +2,6 @@
 
 import { useGetAllProducts } from '@/api/admin/product/useGetAllProducts'
 import ProductsPage from '@/components/admin/products/ProductPage'
-import { Spinner } from '@/components/ui/spinner'
 import { useItemStore } from '@/store/useItemStore'
 import { useQuery } from '@tanstack/react-query'
 import React, { useEffect } from 'react'
@@ -14,14 +13,15 @@ export default function Products() {
     queryFn: useGetAllProducts
   })
 
-  const { initializeData, loadSavedFilters } = useItemStore();
+  const { initializeData, loadSavedFilters, setSortBy  } = useItemStore();
 
   useEffect(() => {
     if (data) {
       initializeData(data);
       loadSavedFilters();
+      setSortBy("newest")
     }
-  }, [data, initializeData, loadSavedFilters]);
+  }, [data, initializeData, loadSavedFilters, setSortBy]);
 
 
 

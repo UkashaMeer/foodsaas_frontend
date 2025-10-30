@@ -34,14 +34,14 @@ export default function ItemRow({
   };
 
   // Safe image access
-  const itemImage = item.images && item.images.length > 0 
-    ? item.images[0] 
-    : "/placeholder-food.jpg";
+  const itemImage = item.images && item.images.length > 0
+    ? item.images[0]
+    : "https://placehold.co/600x400";
 
   const finalPrice = item.isOnDiscount && item.discountPrice ? item.discountPrice : item.price;
 
   return (
-    <TableRow className={`${selected  ? "bg-muted/50" : ""}`}>
+    <TableRow className={`${selected ? "bg-muted/50" : ""}`}>
       <TableCell>
         <Checkbox
           className="ml-2"
@@ -86,9 +86,8 @@ export default function ItemRow({
       </TableCell>
       <TableCell>
         <div className="flex flex-col">
-          <span className={`font-semibold ${
-            item.isOnDiscount ? 'text-green-600' : 'text-foreground'
-          }`}>
+          <span className={`font-semibold ${item.isOnDiscount ? 'text-green-600' : 'text-foreground'
+            }`}>
             Rs. {finalPrice}
           </span>
           {item.isOnDiscount && item.discountPrice && (
@@ -99,7 +98,7 @@ export default function ItemRow({
         </div>
       </TableCell>
       <TableCell>
-        <Badge 
+        <Badge
           variant={item.isAvailable ? "default" : "secondary"}
           className="cursor-pointer hover:opacity-80"
           onClick={handleAvailabilityToggle}
@@ -108,7 +107,7 @@ export default function ItemRow({
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge 
+        <Badge
           variant={item.isOnDiscount ? "default" : "outline"}
           className="cursor-pointer hover:opacity-80"
           onClick={handleDiscountToggle}

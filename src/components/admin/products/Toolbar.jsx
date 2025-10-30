@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { ArrowUpDown, Calendar, ArrowUp, ArrowDown } from "lucide-react";
 
 export default function Toolbar({
   searchQuery,
@@ -27,6 +28,8 @@ export default function Toolbar({
   onAvailabilityFilterChange,
   discountFilter,
   onDiscountFilterChange,
+  sortBy = "Newest First",
+  onSortChange,
   itemsPerPage,
   onItemsPerPageChange,
   onAddItem,
@@ -41,11 +44,41 @@ export default function Toolbar({
   const fileInputRef = useRef(null);
   const [showCategoryChips, setShowCategoryChips] = useState(false);
 
+  // Get sort label for display
+  const getSortLabel = (value) => {
+    switch(value) {
+      case "newest": return "Newest First";
+      case "oldest": return "Oldest First";
+      case "name_asc": return "Name A-Z";
+      case "name_desc": return "Name Z-A";
+      case "price_low": return "Price: Low to High";
+      case "price_high": return "Price: High to Low";
+      default: return "Newest First";
+    }
+  };
+
+  // Quick filters - UPDATED
   const quickFilters = [
-    { label: "All", value: "all" },
-    { label: "Available", value: "available" },
-    { label: "On Discount", value: "discount" },
+    { label: "All", value: { category: "all", availability: "all", discount: "all", sort: "newest" } },
+    { label: "Available", value: { category: "all", availability: "available", discount: "all", sort: "newest" } },
+    { label: "On Discount", value: { category: "all", availability: "all", discount: "discount", sort: "newest" } },
+    { label: "Latest", value: { category: "all", availability: "all", discount: "all", sort: "newest" } },
+    { label: "Oldest", value: { category: "all", availability: "all", discount: "all", sort: "oldest" } },
   ];
+
+  const applyQuickFilter = (filter) => {
+    onCategoryFilterChange(filter.category);
+    onAvailabilityFilterChange(filter.availability);
+    onDiscountFilterChange(filter.discount);
+    onSortChange(filter.sort);
+  };
+
+  const isActiveFilter = (filter) => {
+    return categoryFilter === filter.category && 
+           availabilityFilter === filter.availability && 
+           discountFilter === filter.discount &&
+           sortBy === filter.sort;
+  };
 
   return (
     <Card className="mb-6 py-0!">
@@ -53,7 +86,7 @@ export default function Toolbar({
         {/* Search and Main Filters */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-full">
             <Input
               type="search"
               placeholder="Search items by name, details, or category..."
@@ -83,7 +116,7 @@ export default function Toolbar({
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           {/* Category Filter */}
           <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -119,6 +152,24 @@ export default function Toolbar({
             </SelectContent>
           </Select>
 
+          {/* Sort Filter */}
+          <Select value={sortBy} onValueChange={onSortChange}>
+            <SelectTrigger className="w-full sm:w-48">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                <span>{getSortLabel(sortBy)}</span>
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
+              <SelectItem value="name_asc">Name A-Z</SelectItem>
+              <SelectItem value="name_desc">Name Z-A</SelectItem>
+              <SelectItem value="price_low">Price: Low to High</SelectItem>
+              <SelectItem value="price_high">Price: High to Low</SelectItem>
+            </SelectContent>
+          </Select>
+
           {/* Items Per Page */}
           <Select value={itemsPerPage.toString()} onValueChange={(value) => onItemsPerPageChange(parseInt(value))}>
             <SelectTrigger className="w-full sm:w-24">
@@ -137,32 +188,6 @@ export default function Toolbar({
           </Button>
         </div>
 
-        {/* Category Chips */}
-        <div className="mt-3">
-          <div className="flex flex-wrap gap-2">
-            {categories.slice(0, showCategoryChips ? categories.length : 5).map((category) => (
-              <Badge
-                key={category._id}
-                variant={categoryFilter === category._id ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => onCategoryFilterChange(
-                  categoryFilter === category._id ? "all" : category._id
-                )}
-              >
-                {category.name}
-              </Badge>
-            ))}
-            {categories.length > 5 && (
-              <Badge
-                variant="outline"
-                className="cursor-pointer"
-                onClick={() => setShowCategoryChips(!showCategoryChips)}
-              >
-                {showCategoryChips ? "Show Less" : `+${categories.length - 5} more`}
-              </Badge>
-            )}
-          </div>
-        </div>
 
         {/* Bulk Actions */}
         {selectedCount > 0 && (
