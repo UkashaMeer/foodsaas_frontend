@@ -37,6 +37,10 @@ export default function MyOrders({ ordersData }) {
     order.status === 'DELIVERED' || order.status === 'CANCELLED'
   );
 
+  const cancelledOrders = ordersData.orders.filter(order => 
+    order.status === "CANCELLED"
+  ) 
+
   const totalSpent = orderHistory
     .filter(order => order.status === 'DELIVERED')
     .reduce((sum, order) => sum + order.totalPrice, 0);
@@ -47,14 +51,17 @@ export default function MyOrders({ ordersData }) {
         {/* Header */}
         <div className="mb-4 animate-in fade-in duration-700">
           <div className="flex items-center justify-start gap-4 mt-4 flex-wrap">
-            <Badge variant="default" className="text-sm rounded-md">
+            <Badge variant="outline" className="text-sm rounded-md">
               {ordersData.count} Total {ordersData.count === 1 ? 'Order' : 'Orders'}
             </Badge>
             <Badge variant="outline" className="text-sm rounded-md">
               {currentOrders.length} Active
             </Badge>
-            <Badge variant="outline" className="text-sm rounded-md">
-              {orderHistory.length} Completed
+            <Badge className="text-sm rounded-md bg-green-600">
+              {orderHistory.length - cancelledOrders.length} Delivered
+            </Badge>
+            <Badge variant="destructive" className="text-sm rounded-md">
+              {cancelledOrders.length} Cancelled
             </Badge>
             {totalSpent > 0 && (
               <Badge variant="default" className="text-sm rounded-md">

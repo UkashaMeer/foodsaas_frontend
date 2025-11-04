@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { History, Zap } from "lucide-react";
+import Link from "next/link";
 
 export const EmptyState = ({ type }) => {
   return (
@@ -11,7 +12,9 @@ export const EmptyState = ({ type }) => {
           <p className="text-muted-foreground mb-6 max-w-md">
             You don't have any orders in progress. Start a new order to track your delicious food journey!
           </p>
-          <Button>Order Now</Button>
+          <Link href="/">
+            <Button>Order Now</Button>
+          </Link>
         </>
       ) : (
         <>
@@ -20,7 +23,9 @@ export const EmptyState = ({ type }) => {
           <p className="text-muted-foreground mb-6 max-w-md">
             Your order history will appear here once you complete your first order. Start ordering to build your history!
           </p>
-          <Button>Start Your First Order</Button>
+          <Link href="/">
+            <Button>Start Your First Order</Button>
+          </Link>
         </>
       )}
     </div>
