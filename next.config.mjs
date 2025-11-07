@@ -1,8 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-   images: {
-    remotePatterns: [new URL('https://www.dominos.com.pk/**')],
+  experimental: {
+    appDir: true, // 👈 ensures middleware works properly with /src/app/
   },
-};
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "www.dominos.com.pk",
+        pathname: "/**",
+      },
+    ],
+  },
+}
 
-export default nextConfig;
+export default nextConfig

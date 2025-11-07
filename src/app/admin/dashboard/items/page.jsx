@@ -1,6 +1,6 @@
 "use client"
 
-import { useGetAllProducts } from '@/api/admin/product/useGetAllProducts'
+import { useGetAllProducts } from '@/api/admin/items/useGetAllProducts'
 import ProductsPage from '@/components/admin/products/ProductPage'
 import { useItemStore } from '@/store/useItemStore'
 import { useQuery } from '@tanstack/react-query'

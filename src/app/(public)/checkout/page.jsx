@@ -2,32 +2,100 @@
 import { jwtDecode } from 'jwt-decode'
 import { v4 as uuidv4 } from 'uuid';
 import { useEffect, useState } from 'react'
-import { ChevronRight, MapPin, Phone, User, CreditCard, Wallet, Check, Clock, Package } from 'lucide-react'
+import { ChevronRight, MapPin, Phone, User, CreditCard, Wallet, Check, Clock, Package, Lock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { getAllCartItems } from '@/api/user/cart/getAllCartItems';
 import { usePlaceOrder } from '@/api/user/checkout/usePlaceOrder';
+import { useConfirmPayment } from '@/api/user/checkout/useConfirmPayment';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useCartState } from '@/store/useCartState';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { useRequireAuth } from '@/hooks/useAuth';
+import { Spinner } from '@/components/ui/spinner';
 
-export default function CheckoutPage() {
+// Initialize Stripe with your publishable key
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
+// Stripe Card Form Component
+function StripeCardForm({ paymentMethod, onCardReady }) {
+    const elements = useElements();
+    const [cardComplete, setCardComplete] = useState(false);
+
+    const handleCardChange = (event) => {
+        const isComplete = event.complete;
+        setCardComplete(isComplete);
+        if (onCardReady) {
+            onCardReady(isComplete);
+        }
+    };
+
+    // Only show card form if payment method is 'card'
+    if (paymentMethod !== 'card') {
+        return null;
+    }
+
+    return (
+        <div className="space-y-4 mt-6 p-4 border border-border rounded-lg bg-muted/20">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Lock className="w-5 h-5 text-primary" />
+                Card Details
+            </h3>
+            <div className="p-3 border border-border rounded-md bg-background">
+                <CardElement
+                    options={{
+                        style: {
+                            base: {
+                                fontSize: '16px',
+                                color: 'hsl(var(--foreground))',
+                                fontFamily: 'Inter, sans-serif',
+                                '::placeholder': {
+                                    color: 'hsl(var(--muted-foreground))',
+                                },
+                                padding: '10px',
+                            },
+                            invalid: {
+                                color: 'hsl(var(--destructive))',
+                            },
+                        },
+                    }}
+                    onChange={handleCardChange}
+                />
+            </div>
+            {cardComplete && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                    <Check className="w-4 h-4" />
+                    <span>Card details complete</span>
+                </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+                Your card will be charged securely via Stripe
+            </p>
+        </div>
+    );
+}
+
+function CheckoutPageContent() {
     const router = useRouter()
-
+    const stripe = useStripe();
+    const elements = useElements();
     const { mutate } = getAllCartItems()
     const { setCount } = useCartState()
     const { mutate: placeOrderMutate, isPending } = usePlaceOrder()
+    const { mutate: confirmPayment } = useConfirmPayment();
+
     const [step, setStep] = useState(1)
     const [paymentMethod, setPaymentMethod] = useState('cod')
     const [cartItems, setCartItems] = useState([])
     const [userId, setUserId] = useState(null)
-
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [isCardReady, setIsCardReady] = useState(false)
+    const [createdOrder, setCreatedOrder] = useState(null)
 
     useEffect(() => {
-
         let guestId = null
-
         const token = typeof window !== "undefined" && localStorage.getItem("token")
 
         if (token) {
@@ -60,7 +128,6 @@ export default function CheckoutPage() {
                 console.error("Something went wrong")
             }
         })
-
     }, [])
 
     const subtotal = cartItems.reduce((sum, cart) => {
@@ -73,7 +140,6 @@ export default function CheckoutPage() {
 
     const deliveryFee = 200;
     const total = subtotal + deliveryFee;
-
 
     const [formData, setFormData] = useState({
         name: '',
@@ -99,11 +165,15 @@ export default function CheckoutPage() {
 
     const handlePlaceOrder = async () => {
         try {
+            setIsProcessing(true);
+
+            // Clean phone number - remove all non-numeric characters
+            const cleanPhoneNumber = formData.phone.replace(/\D/g, '');
 
             const payload = {
                 userId,
                 fullName: formData.name,
-                phoneNumber: formData.phone,
+                phoneNumber: cleanPhoneNumber,
                 email: formData.email,
                 address: formData.address,
                 city: formData.city,
@@ -118,26 +188,128 @@ export default function CheckoutPage() {
             }
 
             placeOrderMutate(payload, {
-                onSuccess: (res) => {
-                    console.log(res)
-                    toast.success("Congratulations order is placed successfully!")
-                    router.push("/profile")
+                onSuccess: async (res) => {
+                    console.log("Order creation response:", res);
+                    setCreatedOrder(res?.order);
 
+                    if (paymentMethod === 'card') {
+                        // Process card payment immediately after order creation
+                        if (!stripe || !elements) {
+                            toast.error("Payment system not ready. Please try again.");
+                            setIsProcessing(false);
+                            return;
+                        }
+
+                        const cardElement = elements.getElement(CardElement);
+
+                        if (!cardElement) {
+                            toast.error("Card details not found. Please check your card information.");
+                            setIsProcessing(false);
+                            return;
+                        }
+
+                        if (!res?.clientSecret) {
+                            toast.error("Payment session expired. Please try again.");
+                            setIsProcessing(false);
+                            return;
+                        }
+
+                        console.log("Processing payment with clientSecret:", res.clientSecret);
+
+                        try {
+                            const { error, paymentIntent } = await stripe.confirmCardPayment(res.clientSecret, {
+                                payment_method: {
+                                    card: cardElement,
+                                }
+                            });
+
+                            if (error) {
+                                console.error("Stripe confirmation error:", error);
+
+                                if (error.type === 'card_error' || error.type === 'validation_error') {
+                                    toast.error(error.message);
+                                } else {
+                                    toast.error("Payment failed. Please try again.");
+                                }
+
+                                setIsProcessing(false);
+                            } else if (paymentIntent) {
+                                console.log("Payment Intent Status:", paymentIntent.status);
+
+                                if (paymentIntent.status === 'succeeded') {
+                                    console.log("Payment succeeded! Confirming with backend...");
+
+                                    // Confirm payment with backend
+                                    confirmPayment(
+                                        {
+                                            orderId: res?.order?._id,
+                                            paymentIntentId: paymentIntent.id
+                                        },
+                                        {
+                                            onSuccess: (confirmRes) => {
+                                                console.log("Payment confirmation success:", confirmRes);
+                                                toast.success("Payment successful! Order placed.");
+                                                setIsProcessing(false);
+                                                setStep(3); // Move to success step
+                                            },
+                                            onError: (err) => {
+                                                console.error("Payment confirmation error:", err);
+                                                // Even if confirmation fails, the payment was successful
+                                                toast.success("Payment completed! Order placed successfully.");
+                                                setIsProcessing(false);
+                                                setStep(3); // Move to success step
+                                            }
+                                        }
+                                    );
+                                } else {
+                                    console.log("Payment intent in unexpected state:", paymentIntent.status);
+                                    toast.error(`Payment is ${paymentIntent.status}. Please check your order status.`);
+                                    setIsProcessing(false);
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Payment processing error:", err);
+                            toast.error("Payment processing failed. Please try again.");
+                            setIsProcessing(false);
+                        }
+                    } else {
+                        // For COD, order is complete
+                        setIsProcessing(false);
+                        toast.success("Congratulations! Order placed successfully!");
+                        setStep(3); // Move to success step
+                    }
                 },
                 onError: (err) => {
-                    console.error(err)
+                    console.error("Order creation error:", err);
+                    toast.error("Failed to place order. Please try again.");
+                    setIsProcessing(false);
                 }
             })
-
         } catch (err) {
-            console.error("handle Place Order Error", err)
+            console.error("Handle place order error:", err);
+            toast.error("Something went wrong. Please try again.");
+            setIsProcessing(false);
+        }
+    }
+
+    const canProceedFromStep2 = () => {
+        if (paymentMethod === 'card') {
+            return isCardReady; // Only proceed if card details are complete
+        }
+        return true; // For COD, always can proceed
+    }
+
+    const getStep2ButtonText = () => {
+        if (paymentMethod === 'card') {
+            return isProcessing ? "Processing Payment..." : "Place Order & Pay";
+        } else {
+            return isProcessing ? "Placing Order..." : "Place Order";
         }
     }
 
     return (
         <div className="min-h-screen py-8 px-4 max-w-[1140px] mx-auto">
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
                 <div className="text-center mb-12 animate-fade-in">
                     <h1 className="text-4xl font-bold mb-3 from-primary to-primary/60 bg-clip-text">
                         Checkout
@@ -181,7 +353,6 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="grid lg:grid-cols-4 gap-8">
-                    {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
                         {step === 1 && (
                             <div className="space-y-6 animate-slide-in">
@@ -208,8 +379,16 @@ export default function CheckoutPage() {
                                                     type="tel"
                                                     name="phone"
                                                     value={formData.phone}
-                                                    onChange={handleInputChange}
+                                                    onChange={(e) => {
+                                                        // Only allow numbers
+                                                        const numericValue = e.target.value.replace(/\D/g, '');
+                                                        setFormData({
+                                                            ...formData,
+                                                            phone: numericValue
+                                                        });
+                                                    }}
                                                     placeholder="03168200581"
+                                                    pattern="[0-9]*"
                                                 />
                                             </div>
                                         </div>
@@ -260,92 +439,91 @@ export default function CheckoutPage() {
                             </div>
                         )}
 
-                        {/* Step 2: Payment Method */}
                         {step === 2 && (
-                            <div className="bg-card border border-border rounded-2xl p-6 shadow-lg animate-slide-in">
-                                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                                    <Wallet className="w-5 h-5 text-primary" />
-                                    Payment Method
-                                </h2>
-                                <div className="space-y-4">
-                                    <button
-                                        onClick={() => setPaymentMethod('cod')}
-                                        className={`w-full p-5 rounded-xl border-2 transition-all duration-300 flex items-center gap-4 ${paymentMethod === 'cod'
-                                            ? 'border-primary bg-primary/5 shadow-md'
-                                            : 'border-border hover:border-primary/50'
-                                            }`}
-                                    >
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cod' ? 'border-primary' : 'border-muted-foreground'
-                                            }`}>
-                                            {paymentMethod === 'cod' && <div className="w-3 h-3 rounded-full bg-primary" />}
-                                        </div>
-                                        <Wallet className="w-8 h-8 text-primary" />
-                                        <div className="flex-1 text-left">
-                                            <div className="font-semibold">Cash on Delivery</div>
-                                            <div className="text-sm text-muted-foreground">Pay when you receive your order</div>
-                                        </div>
-                                    </button>
+                            <div className="space-y-6 animate-slide-in">
+                                <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
+                                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                                        <Wallet className="w-5 h-5 text-primary" />
+                                        Payment Method
+                                    </h2>
 
-                                    {/* <button
-                                        onClick={() => setPaymentMethod('card')}
-                                        className={`w-full p-5 rounded-xl border-2 transition-all duration-300 flex items-center gap-4 ${paymentMethod === 'card'
-                                            ? 'border-primary bg-primary/5 shadow-md'
-                                            : 'border-border hover:border-primary/50'
-                                            }`}
-                                    >
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'card' ? 'border-primary' : 'border-muted-foreground'
-                                            }`}>
-                                            {paymentMethod === 'card' && <div className="w-3 h-3 rounded-full bg-primary" />}
-                                        </div>
-                                        <CreditCard className="w-8 h-8 text-primary" />
-                                        <div className="flex-1 text-left">
-                                            <div className="font-semibold">Credit/Debit Card</div>
-                                            <div className="text-sm text-muted-foreground">Pay securely with your card</div>
-                                        </div>
-                                    </button>
+                                    <div className="space-y-4">
+                                        <button
+                                            onClick={() => setPaymentMethod('cod')}
+                                            className={`w-full p-5 rounded-xl border-2 transition-all duration-300 flex items-center gap-4 ${paymentMethod === 'cod'
+                                                ? 'border-primary bg-primary/5 shadow-md'
+                                                : 'border-border hover:border-primary/50'
+                                                }`}
+                                        >
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cod' ? 'border-primary' : 'border-muted-foreground'
+                                                }`}>
+                                                {paymentMethod === 'cod' && <div className="w-3 h-3 rounded-full bg-primary" />}
+                                            </div>
+                                            <Wallet className="w-8 h-8 text-primary" />
+                                            <div className="flex-1 text-left">
+                                                <div className="font-semibold">Cash on Delivery</div>
+                                                <div className="text-sm text-muted-foreground">Pay when you receive your order</div>
+                                            </div>
+                                        </button>
 
-                                    <button
-                                        onClick={() => setPaymentMethod('easypaisa')}
-                                        className={`w-full p-5 rounded-xl border-2 transition-all duration-300 flex items-center gap-4 ${paymentMethod === 'easypaisa'
-                                            ? 'border-primary bg-primary/5 shadow-md'
-                                            : 'border-border hover:border-primary/50'
-                                            }`}
-                                    >
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'easypaisa' ? 'border-primary' : 'border-muted-foreground'
-                                            }`}>
-                                            {paymentMethod === 'easypaisa' && <div className="w-3 h-3 rounded-full bg-primary" />}
-                                        </div>
-                                        <Phone className="w-8 h-8 text-primary" />
-                                        <div className="flex-1 text-left">
-                                            <div className="font-semibold">Easypaisa / JazzCash</div>
-                                            <div className="text-sm text-muted-foreground">Pay via mobile wallet</div>
-                                        </div>
-                                    </button> */}
+                                        <button
+                                            onClick={() => setPaymentMethod('card')}
+                                            className={`w-full p-5 rounded-xl border-2 transition-all duration-300 flex items-center gap-4 ${paymentMethod === 'card'
+                                                ? 'border-primary bg-primary/5 shadow-md'
+                                                : 'border-border hover:border-primary/50'
+                                                }`}
+                                        >
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'card' ? 'border-primary' : 'border-muted-foreground'
+                                                }`}>
+                                                {paymentMethod === 'card' && <div className="w-3 h-3 rounded-full bg-primary" />}
+                                            </div>
+                                            <CreditCard className="w-8 h-8 text-primary" />
+                                            <div className="flex-1 text-left">
+                                                <div className="font-semibold">Credit/Debit Card</div>
+                                                <div className="text-sm text-muted-foreground">Pay securely with your card</div>
+                                            </div>
+                                        </button>
+                                    </div>
+
+                                    {/* Stripe Card Form - shows immediately when card is selected */}
+                                    <StripeCardForm
+                                        paymentMethod={paymentMethod}
+                                        onCardReady={setIsCardReady}
+                                    />
                                 </div>
                             </div>
                         )}
 
-                        {/* Step 3: Review Order */}
                         {step === 3 && (
                             <div className="space-y-6 animate-slide-in">
                                 <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
-                                    <h2 className="text-xl font-semibold mb-4">Delivery Details</h2>
-                                    <div className="space-y-3 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Name:</span>
-                                            <span className="font-medium">{formData.name || 'Not provided'}</span>
+                                    <h2 className="text-xl font-semibold mb-4 text-green-600">
+                                        {paymentMethod === 'card' ? 'Payment Successful!' : 'Order Placed Successfully!'}
+                                    </h2>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <Check className="w-5 h-5 text-green-600" />
+                                            <span>Your order has been confirmed</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Phone:</span>
-                                            <span className="font-medium">{formData.phone || 'Not provided'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Address:</span>
-                                            <span className="font-medium text-right max-w-xs">{formData.address || 'Not provided'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Payment:</span>
-                                            <span className="font-medium capitalize">{paymentMethod.replace('_', ' ')}</span>
+                                        <div className="space-y-3 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Order Number:</span>
+                                                <span className="font-medium">{createdOrder?.orderNumber}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Name:</span>
+                                                <span className="font-medium">{formData.name}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Payment Method:</span>
+                                                <span className="font-medium capitalize">
+                                                    {paymentMethod === 'cod' ? 'Cash on Delivery' : 'Credit/Debit Card'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Total Amount:</span>
+                                                <span className="font-bold text-primary">Rs. {total.toLocaleString()}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -353,32 +531,58 @@ export default function CheckoutPage() {
                         )}
 
                         {/* Navigation Buttons */}
-                        <div className="flex gap-4">
-                            {step > 1 && (
+                        {step < 3 && (
+                            <div className="flex gap-4">
+                                {step > 1 && (
+                                    <button
+                                        onClick={() => setStep(step - 1)}
+                                        className="cursor-pointer px-8 py-3 rounded-lg border-2 border-border hover:border-primary transition-all font-semibold"
+                                        disabled={isProcessing}
+                                    >
+                                        Back
+                                    </button>
+                                )}
+
+                                {step === 1 ? (
+                                    <button
+                                        onClick={() => setStep(2)}
+                                        className="cursor-pointer flex-1 bg-primary text-primary-foreground rounded-lg py-3 font-semibold hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        Continue
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handlePlaceOrder}
+                                        disabled={!canProceedFromStep2() || isProcessing}
+                                        className="cursor-pointer flex-1 bg-primary text-primary-foreground rounded-lg py-3 font-semibold hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {getStep2ButtonText()}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Success Step Navigation */}
+                        {step === 3 && (
+                            <div className="flex gap-4">
                                 <button
-                                    onClick={() => setStep(step - 1)}
+                                    onClick={() => router.push("/profile")}
+                                    className="cursor-pointer flex-1 bg-primary text-primary-foreground rounded-lg py-3 font-semibold hover:bg-primary/90 transition-all shadow-lg"
+                                >
+                                    View Your Orders
+                                </button>
+                                <button
+                                    onClick={() => router.push("/")}
                                     className="cursor-pointer px-8 py-3 rounded-lg border-2 border-border hover:border-primary transition-all font-semibold"
                                 >
-                                    Back
+                                    Continue Shopping
                                 </button>
-                            )}
-                            {step < 3 ? (
-                                <button
-                                    onClick={() => setStep(step + 1)}
-                                    className="cursor-pointer flex-1 bg-primary text-primary-foreground rounded-lg py-3 font-semibold hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2"
-                                >
-                                    Continue
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
-                            ) : (
-                                <button className="cursor-pointer flex-1 bg-primary text-primary-foreground rounded-lg py-3 font-semibold hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2" onClick={handlePlaceOrder}>
-                                   {isPending ? "Placing Order..." : "Place Order"} 
-                                </button>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Order Summary Sidebar */}
+                    {/* Order Summary Sidebar - Same as before */}
                     <div className="lg:col-span-2">
                         <div className="bg-card border border-border rounded-2xl p-6 shadow-lg sticky top-8 animate-fade-in">
                             <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
@@ -467,5 +671,23 @@ export default function CheckoutPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function CheckoutPage() {
+    const { isAuthenticated } = useRequireAuth('/')
+
+    if (!isAuthenticated) {
+        return (
+            <div className="w-full min-h-screen flex flex-col gap-2 items-center justify-center">
+                <Spinner className="size-8 text-primary" />
+                <span className="text-primary text-lg font-semibold">Loading...</span>
+            </div>
+        )
+    }
+    return (
+        <Elements stripe={stripePromise}>
+            <CheckoutPageContent />
+        </Elements>
     )
 }

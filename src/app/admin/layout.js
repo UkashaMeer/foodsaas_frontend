@@ -4,7 +4,7 @@ import { Providers } from "@/providers/Providers";
 
 export default function AdminLayout({ children }) {
   return (
-    <body>
+    <div>
       <Toaster />
       <Providers>
         <div className="flex min-h-screen">
@@ -13,6 +13,6 @@ export default function AdminLayout({ children }) {
           </div>
         </div>
       </Providers>
-    </body>
+    </div>
   );
 }

@@ -1,11 +1,8 @@
-// components/OrderManagementClient.jsx
-'use client'
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Download, RefreshCw, Clock, CheckCircle2, Truck, Package, XCircle } from 'lucide-react'
-import { OrderCard } from './OrderCard'
+import { OrderRow } from './OrderRow'
 import { OrderDetailsModal } from './OrderDetailsModal'
 import { OrderTable } from './OrderTable'
 import { OrderFilters } from './OrderFilters'
@@ -215,7 +212,7 @@ export default function OrderManagementPage() {
               
               <div className="lg:hidden space-y-4">
                 {filteredOrders.map((order) => (
-                  <OrderCard key={order._id} order={order} />
+                  <OrderRow key={order._id} order={order} />
                 ))}
                 {filteredOrders.length === 0 && (
                   <div className="text-center py-12 space-y-3">

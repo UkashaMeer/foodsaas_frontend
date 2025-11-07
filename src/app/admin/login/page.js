@@ -8,13 +8,15 @@ import { useLogin } from '@/api/user/auth/useLogin'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useUserLoginState } from '@/store/useUserLoginState'
+import { saveToken } from "@/utils/auth";
+
 
 export default function LoginPage() {
     const { mutate, isPending } = useLogin()
     const router = useRouter()
     const [form, setForm] = useState({ email: '', password: '' })
     const [showPassword, setShowPassword] = useState(false)
-    const { checkLogin, isLogin } = useUserLoginState()
+    const { checkLogin, isLogin, closeLogin } = useUserLoginState()
 
     useEffect(() => {
         if (isLogin) {
@@ -31,18 +33,21 @@ export default function LoginPage() {
             onSuccess: (res) => {
                 try {
                     toast.success("Login Successfully.")
-                    localStorage.setItem("token", res.token)
+                    // Save token in both localStorage and cookies
+                    saveToken(res.token)
                     localStorage.removeItem("guestId")
 
                     console.log("🔐 Token saved:", res.token)
                     console.log("👤 Role:", res?.data?.role)
 
                     setForm({ email: "", password: "" })
+                    checkLogin()
 
+                    // Let middleware handle the redirect
                     if (res?.data?.role === "OWNER") {
-                        router.push("/admin/dashboard")
+                        window.location.href = "/admin/dashboard"
                     } else {
-                        console.push("/")
+                        window.location.href = "/"
                     }
                 } catch (err) {
                     console.error("🔥 Error in onSuccess handler:", err)

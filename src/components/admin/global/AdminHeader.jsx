@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminStore } from "@/store/useAdminStore";
+import { useUserLoginState } from "@/store/useUserLoginState";
+import { useRouter } from "next/navigation";
 
 // Custom Hook for Click Outside
 const useClickOutside = (callback) => {
@@ -38,6 +40,25 @@ export const AdminHeader = () => {
 
   // Close dropdowns when clicking outside
   useClickOutside(closeAllDropdowns);
+  const { removeLogin, userRole } = useUserLoginState()
+  const router = useRouter()
+
+
+  const handleLogOut = () => {
+    removeLogin()
+
+    // Redirect based on previous role
+    if (userRole === 'OWNER') {
+      router.push('/admin/login')
+    } else {
+      router.push('/')
+    }
+
+    // Optional: Force reload to clear any cached state
+    setTimeout(() => {
+      window.location.reload()
+    }, 100)
+  }
 
   const notifications = [
     { id: 1, title: "New order received", time: "2 min ago", unread: true },
@@ -137,7 +158,7 @@ export const AdminHeader = () => {
                       className={cn(
                         "p-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors",
                         notification.unread &&
-                          "bg-blue-50/50 border-l-2 border-l-blue-500"
+                        "bg-blue-50/50 border-l-2 border-l-blue-500"
                       )}
                     >
                       <p className="font-medium text-sm text-foreground">
@@ -223,14 +244,14 @@ export const AdminHeader = () => {
                   </button>
                 </div>
 
-                <div className="p-2 border-t border-border">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors">
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
-                  </button>
-                </div>
               </div>
             )}
+          </div>
+          <div className="p-2 ">
+            <button onClick={handleLogOut} className="cursor-pointer w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors">
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

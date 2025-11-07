@@ -1,6 +1,3 @@
-// components/OrderTable.jsx
-'use client'
-
 import { useState } from 'react'
 import {
   Table,
@@ -66,7 +63,7 @@ export const OrderTable = () => {
             <SortableHeader field="orderedAt">Date</SortableHeader>
             <SortableHeader field="fullName">Customer</SortableHeader>
             <TableHead>Items</TableHead>
-            <TableHead>Location</TableHead>
+            {/* <TableHead>Location</TableHead> */}
             <SortableHeader field="totalPrice">Total</SortableHeader>
             <TableHead>Status</TableHead>
             <TableHead>Payment</TableHead>
@@ -111,14 +108,14 @@ export const OrderTable = () => {
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <div className="flex flex-col text-sm">
                     <span className="font-medium">{order.city}</span>
                     <span className="text-muted-foreground truncate max-w-[150px]">
                       {order.address}
                     </span>
                   </div>
-                </TableCell>
+                </TableCell> */}
                 <TableCell className="font-semibold">
                   Rs. {order.totalPrice.toLocaleString()}
                 </TableCell>

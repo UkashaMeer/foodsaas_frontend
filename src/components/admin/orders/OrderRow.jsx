@@ -1,6 +1,3 @@
-// components/OrderCard.jsx
-'use client'
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +6,7 @@ import { Eye, Phone, Mail, MapPin } from 'lucide-react'
 import useOrderStore from '@/store/useOrderStore'
 import { format } from 'date-fns'
 
-export const OrderCard = ({ order }) => {
+export const OrderRow = ({ order }) => {
   const { setSelectedOrder, setModalOpen } = useOrderStore()
 
   const handleViewDetails = () => {

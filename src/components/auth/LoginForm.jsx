@@ -6,34 +6,34 @@ import { useLogin } from "@/api/user/auth/useLogin";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useUserLoginState } from "@/store/useUserLoginState";
-import { useRouter } from "next/navigation";
+import { saveToken } from "@/utils/auth";
 
 export default function LoginForm() {
-    const { mutate, isPending} = useLogin()
+    const { mutate, isPending } = useLogin()
     const { checkLogin } = useUserLoginState()
     const { showLogin, closeLogin, openRegister } = useAuthDialogState()
-    const [form, setForm] = useState({ email: "", password: "" }) 
-    const router  = useRouter()
+    const [form, setForm] = useState({ email: "", password: "" })
 
     const handleSubmit = (e) => {
         e.preventDefault()
 
-        mutate(form, ({
+        mutate(form, {
             onSuccess: (res) => {
                 toast.success("Login Successfully.")
-                localStorage.setItem("token", res.token)
+                // Save token in both localStorage and cookies
+                saveToken(res.token)
                 localStorage.removeItem("guestId")
-                if (res.data.role === "OWNER"){
-                    router.push("/admin/dashboard")
-                }
+
                 setForm({ email: "", password: "" })
-                checkLogin()
-                closeLogin()
+                checkLogin() // Update store state
+
+                // Let middleware handle the redirect
+                window.location.href = res.data.role === "OWNER" ? "/admin/dashboard" : "/"
             },
             onError: (err) => {
                 toast.error(err?.response?.data?.error || "Something went wrong!")
             }
-        }))
+        })
     }
 
     return (
@@ -64,7 +64,7 @@ export default function LoginForm() {
                     </Button>
                 </form>
                 <span className="text-sm text-gray-500 mx-auto">
-                    Don't have account? <button className="text-primary cursor-pointer underline" onClick={() => {closeLogin(); openRegister();}}>Register Now</button>
+                    Don't have account? <button className="text-primary cursor-pointer underline" onClick={() => { closeLogin(); openRegister(); }}>Register Now</button>
                 </span>
             </DialogContent>
         </Dialog>

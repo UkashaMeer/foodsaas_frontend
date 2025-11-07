@@ -18,9 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useCreateItem } from "@/api/admin/product/useCreateItem";
+import { useCreateItem } from "@/api/admin/items/useCreateItem";
 import { Plus, Minus, Trash2 } from "lucide-react";
-import { useUpdateItem } from "@/api/admin/product/useUpdateItem";
+import { useUpdateItem } from "@/api/admin/items/useUpdateItem";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function ItemFormSheet({ item, open, onOpenChange, onSave, categories }) {
@@ -44,7 +44,6 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
 
   useEffect(() => {
     if (item && open) {
-      console.log("Editing item addons:", item.addons); // Debug log
       setFormData({
         name: item.name || "",
         details: item.details || "",
@@ -88,7 +87,6 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
     e.preventDefault();
 
     if (item) {
-      // ✅ FIXED: Process addons properly
       const processedAddons = formData.addons.map(addon => ({
         name: addon.name || "",
         isRequired: addon.isRequired || false,
@@ -104,7 +102,7 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
       const payload = {
         name: formData.name,
         price: parseFloat(formData.price),
-        discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null, // ✅ This should be discountPrice
+        discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
         details: formData.details,
         categoryId: formData.categoryId,
         isOnDiscount: formData.isOnDiscount,
@@ -115,29 +113,18 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
       const file = formData.images[0] instanceof File ? formData.images[0] : null;
       const id = item._id;
 
-      console.log("🚀 Sending UPDATE payload:", {
-        id,
-        payload,
-        addonsCount: processedAddons.length,
-        discountPrice: payload.discountPrice,
-        hasFile: !!file
-      });
-
       updateItemMutate({ id, payload, file }, {
         onSuccess: (res) => {
-          console.log("✅ Update success:", res);
           toast.success("Item updated successfully.");
           onOpenChange(false);
           queryClient.invalidateQueries(["items"]);
         },
         onError: (error) => {
-          console.error("❌ Update error:", error);
           toast.error(error.response?.data?.error || "Something went wrong while updating item!");
         }
       });
 
     } else {
-      // Create item logic (same as before)
       const processedAddons = formData.addons.map(addon => ({
         name: addon.name || "",
         isRequired: addon.isRequired || false,
@@ -181,7 +168,6 @@ export default function ItemFormSheet({ item, open, onOpenChange, onSave, catego
           queryClient.invalidateQueries(["items"]);
         },
         onError: (error) => {
-          console.error("Create item error:", error);
           toast.error(error.response?.data?.error || "Something went wrong while creating Item.");
         }
       });

@@ -21,6 +21,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Progress } from "@/components/ui/progress";
 import { useRouter } from "next/navigation";
 import { useCategoryStore } from "@/store/useCategoryStore";
+import { useItemStore } from "@/store/useItemStore";
+import useOrderStore from "@/store/useOrderStore";
 
 export const AdminSidebar = () => {
 
@@ -33,14 +35,16 @@ export const AdminSidebar = () => {
   const router = useRouter()
 
   const { categories } = useCategoryStore()
+  const { items } = useItemStore()
+  const { orders } = useOrderStore()
 
   const menuItems = [
     { id: "dashboard", url: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
     { id: "categories", url: "/admin/dashboard/categories", label: "Categories", icon: Package, badge: categories?.length },
-    { id: "products", url: "/admin/dashboard/products", label: "Products", icon: Package, badge: "12" },
-    { id: "orders", url: "/admin/dashboard/orders", label: "Orders", icon: ShoppingCart, badge: "5" },
+    { id: "Items", url: "/admin/dashboard/items", label: "Items", icon: Package, badge: items?.length },
+    { id: "orders", url: "/admin/dashboard/orders", label: "Orders", icon: ShoppingCart, badge: orders?.length },
+    { id: "transactions", url: "/admin/dashboard/transactions", label: "Transactions", icon: CreditCard, badge: null },
     { id: "riders", url: "/admin/dashboard", label: "Riders", icon: Users, badge: "8" },
-    { id: "payments", url: "/admin/dashboard", label: "Payments", icon: CreditCard, badge: null },
     { id: "analytics", url: "/admin/dashboard", label: "Analytics", icon: BarChart3, badge: null },
     { id: "settings", url: "/admin/dashboard", label: "Settings", icon: Settings, badge: null },
   ];

@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,7 +12,7 @@ import DeleteConfirmationDialog from "./DeleteConfirmationDialog";
 import ImageLightboxModal from "./ImageLightboxModal";
 import { handleExportCSV } from "./utils/handleExportCsv";
 import { useItemStore } from "@/store/useItemStore";
-import { useDeleteItem } from "@/api/admin/product/useDeleteItem";
+import { useDeleteItem } from "@/api/admin/items/useDeleteItem";
 
 export default function ProductsPage() {
   const {

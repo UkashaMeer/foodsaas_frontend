@@ -1,5 +1,3 @@
-'use client'
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { OrderStatusBadge } from './OrderStatusBadge'
@@ -42,7 +40,6 @@ export const StatusUpdateDialog = () => {
 
     mutate(payload, {
       onSuccess: (res) => {
-        // ✅ Local state update
         updateOrderStatus(orderId, status)
         
         toast.success("Status Updated Successfully.")

@@ -1,6 +1,3 @@
-// components/OrderStatusBadge.jsx
-'use client'
-
 import { Badge } from '@/components/ui/badge'
 
 const statusConfig = {

@@ -1,21 +1,49 @@
 import { create } from "zustand";
+import { getToken, decodeToken, removeToken, getTokenFromCookie } from "@/utils/auth";
 
 export const useUserLoginState = create((set) => {
-  // Run once on store creation — before any render
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token = getToken() || getTokenFromCookie();
 
   return {
-    isLogin: !!token, // directly initialize with token
+    isLogin: !!token,
+    userRole: token ? decodeToken(token)?.role : null,
+    userData: token ? decodeToken(token) : null,
+    
     checkLogin: () => {
-      if (typeof window !== "undefined") {
-        const token = localStorage.getItem("token");
-        set({ isLogin: !!token });
+      const token = getToken() || getTokenFromCookie();
+      if (token) {
+        const userData = decodeToken(token);
+        set({ 
+          isLogin: true, 
+          userRole: userData?.role,
+          userData 
+        });
+      } else {
+        set({ 
+          isLogin: false, 
+          userRole: null,
+          userData: null 
+        });
       }
     },
+    
     removeLogin: () => {
-      localStorage.removeItem("token");
-      set({ isLogin: false });
+      removeToken();
+      set({ 
+        isLogin: false, 
+        userRole: null,
+        userData: null 
+      });
     },
+
+    setLogin: (token) => {
+      saveToken(token);
+      const userData = decodeToken(token);
+      set({ 
+        isLogin: true, 
+        userRole: userData?.role,
+        userData 
+      });
+    }
   };
 });
