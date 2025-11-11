@@ -54,10 +54,42 @@ export const isOwner = () => {
   return payload?.role === 'OWNER'
 }
 
+export const isRider = () => {
+  const token = getToken()
+  if (!token) return false
+  
+  const payload = decodeToken(token)
+  return payload?.role === 'RIDER'
+}
+
+export const isCustomer = () => {
+  const token = getToken()
+  if (!token) return false
+  
+  const payload = decodeToken(token)
+  return payload?.role === 'CUSTOMER'
+}
+
 export const getUserRole = () => {
   const token = getToken()
   if (!token) return null
   
   const payload = decodeToken(token)
   return payload?.role
+}
+
+export const getUserId = () => {
+  const token = getToken()
+  if (!token) return null
+  
+  const payload = decodeToken(token)
+  return payload?._id
+}
+
+export const getUserName = () => {
+  const token = getToken()
+  if (!token) return null
+  
+  const payload = decodeToken(token)
+  return payload?.name
 }

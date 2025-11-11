@@ -11,7 +11,7 @@ import { useUserLoginState } from '@/store/useUserLoginState'
 import { saveToken } from "@/utils/auth";
 
 
-export default function LoginPage() {
+export default function RiderLogin() {
     const { mutate, isPending } = useLogin()
     const router = useRouter()
     const [form, setForm] = useState({ email: '', password: '' })
@@ -20,9 +20,9 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (isLogin) {
-            router.push("/admin/dashboard")
+            router.push("/rider/dashboard")
         } else {
-            router.push("/admin/login")
+            router.push("/rider/login")
         }
     }, [checkLogin])
 
@@ -78,7 +78,7 @@ export default function LoginPage() {
                 <CardHeader className="text-center pb-4">
                     <img src='/logo.png' className='mx-auto w-32' />
                     <CardTitle className="text-3xl font-bold text-foreground">
-                        Welcome Admin
+                        Welcome Rider
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">
                         Sign in to your account

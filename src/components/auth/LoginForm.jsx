@@ -28,7 +28,7 @@ export default function LoginForm() {
                 checkLogin() // Update store state
 
                 // Let middleware handle the redirect
-                window.location.href = res.data.role === "OWNER" ? "/admin/dashboard" : "/"
+                window.location.href = res.data.role === "OWNER" ? "/admin/dashboard" : res.data.role === "RIDER" ? "/rider/dashboard" : "/"
             },
             onError: (err) => {
                 toast.error(err?.response?.data?.error || "Something went wrong!")
