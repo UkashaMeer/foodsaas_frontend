@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChefHat,
   TrendingUp,
+  Motorbike,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminStore } from "@/store/useAdminStore";
@@ -40,13 +41,13 @@ export const AdminSidebar = () => {
 
   const menuItems = [
     { id: "dashboard", url: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
-    { id: "categories", url: "/admin/dashboard/categories", label: "Categories", icon: Package, badge: categories?.length },
-    { id: "Items", url: "/admin/dashboard/items", label: "Items", icon: Package, badge: items?.length },
-    { id: "orders", url: "/admin/dashboard/orders", label: "Orders", icon: ShoppingCart, badge: orders?.length },
+    { id: "categories", url: "/admin/dashboard/categories", label: "Categories", icon: Package, badge: null },
+    { id: "Items", url: "/admin/dashboard/items", label: "Items", icon: Package, badge: null },
+    { id: "orders", url: "/admin/dashboard/orders", label: "Orders", icon: ShoppingCart, badge: null },
+    { id: "customers", url: "/admin/dashboard/customers", label: "Customers", icon: Users, badge: null },
+    { id: "riders", url: "/admin/dashboard/riders", label: "Riders", icon: Motorbike, badge: null },
     { id: "transactions", url: "/admin/dashboard/transactions", label: "Transactions", icon: CreditCard, badge: null },
-    { id: "riders", url: "/admin/dashboard", label: "Riders", icon: Users, badge: "8" },
-    { id: "analytics", url: "/admin/dashboard", label: "Analytics", icon: BarChart3, badge: null },
-    { id: "settings", url: "/admin/dashboard", label: "Settings", icon: Settings, badge: null },
+    { id: "settings", url: "/admin/dashboard/setting", label: "Settings", icon: Settings, badge: null },
   ];
 
   return (
