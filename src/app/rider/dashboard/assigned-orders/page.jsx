@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUserLoginState } from "@/store/useUserLoginState"
 import { useRiderStore } from "@/store/useRiderStore"
-import { getAssignedOrders, updateOrderStatus, getRiderByUserId } from "@/api/rider/dashboard"
+import { getAssignedOrders, updateOrderStatus, getRiderByUserId, getRiderOrdersCompletedToday } from "@/api/rider/dashboard"
 import { Package, MapPin, Clock, CheckCircle, Truck, User, Phone, Navigation, ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -16,39 +16,31 @@ import { cn } from "@/lib/utils"
 import { getUserId } from "@/utils/auth"
 
 export default function AssignedOrders() {
-  const { userData } = useUserLoginState()
-  const { rider, setRider, setAssignedOrders, assignedOrders } = useRiderStore()
+  const { rider, setRider, setAssignedOrders, assignedOrders, ordersCompletedToday, setOrdersCompletedToday } = useRiderStore()
   const queryClient = useQueryClient()
   const router = useRouter()
-  const userId = getUserId()
   const [activeTab, setActiveTab] = useState('current')
 
-  // Fetch rider data
-  const { data: getRiderByUserIdData } = useQuery({
-    queryKey: ['get-rider-assigned', userId],
-    queryFn: () => getRiderByUserId(userId),
-    enabled: !!userId,
-    onSuccess: (data) => {
-      if (data.rider) {
-        setRider(data.rider)
-      }
-    }
-  })
-
-  const riderId = rider?._id
+  const riderId = localStorage.getItem('riderId')
 
   // Fetch assigned orders
-  const { data: ordersData, isLoading, refetch } = useQuery({
+  const { data: assignedOrdersData, isLoading, refetch } = useQuery({
     queryKey: ['assigned-orders', riderId],
     queryFn: () => getAssignedOrders(riderId),
     enabled: !!riderId,
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 10000,
     onSuccess: (data) => {
       setAssignedOrders(data.assignedOrders || [])
     }
   })
+  const { data: orderCompletedTodayData, isLoading: orderCompletedTodayLoading } = useQuery({
+    queryKey: ['orders-completed-today', riderId],
+    queryFn: () => getRiderOrdersCompletedToday(riderId),
+    onSuccess: (data) => {
+      setOrdersCompletedToday(data.ordersAssignedToday || [])
+    }
+  })
 
-  // Update order status mutation
   const updateStatusMutation = useMutation({
     mutationFn: updateOrderStatus,
     onSuccess: (data, variables) => {
@@ -62,12 +54,11 @@ export default function AssignedOrders() {
     }
   })
 
-  // Update local state when data loads
   useEffect(() => {
-    if (ordersData) {
-      setAssignedOrders(ordersData.assignedOrders || [])
+    if (assignedOrdersData) {
+      setAssignedOrders(assignedOrdersData.assignedOrders || [])
     }
-  }, [ordersData, setAssignedOrders])
+  }, [assignedOrdersData, setAssignedOrders])
 
   const formatCurrency = (amount) => {
     return `PKR ${amount?.toLocaleString() || '0'}`
@@ -181,14 +172,7 @@ export default function AssignedOrders() {
   const currentOrders = assignedOrders?.filter(order => 
     order.status !== 'DELIVERED' && order.status !== 'CANCELLED'
   ) || []
-
-  const completedOrders = assignedOrders?.filter(order => 
-    order.status === 'DELIVERED'
-  ) || []
-
-  const cancelledOrders = assignedOrders?.filter(order => 
-    order.status === 'CANCELLED'
-  ) || []
+  const completedOrders = orderCompletedTodayData?.ordersCompletedToday
 
   if (!riderId) {
     return (
@@ -230,7 +214,7 @@ export default function AssignedOrders() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">{assignedOrders?.length || 0}</div>
@@ -245,31 +229,21 @@ export default function AssignedOrders() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{completedOrders.length}</div>
+            <div className="text-2xl font-bold text-green-600">{completedOrders?.length}</div>
             <div className="text-sm text-muted-foreground">Completed</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">{cancelledOrders.length}</div>
-            <div className="text-sm text-muted-foreground">Cancelled</div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="current" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 gap-4">
+          <TabsTrigger value="current" className="flex items-center gap-2 py-2 cursor-pointer">
             <Package className="h-4 w-4" />
             Current ({currentOrders.length})
           </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center gap-2">
+          <TabsTrigger value="completed" className="flex items-center gap-2 py-2 cursor-pointer">
             <CheckCircle className="h-4 w-4" />
-            Completed ({completedOrders.length})
-          </TabsTrigger>
-          <TabsTrigger value="cancelled" className="flex items-center gap-2">
-            <span>❌</span>
-            Cancelled ({cancelledOrders.length})
+            Completed ({completedOrders?.length})
           </TabsTrigger>
         </TabsList>
 
@@ -450,7 +424,7 @@ export default function AssignedOrders() {
 
         {/* Completed Orders Tab */}
         <TabsContent value="completed" className="space-y-4">
-          {completedOrders.length === 0 ? (
+          {completedOrders?.length === 0 ? (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center text-muted-foreground">
@@ -462,7 +436,7 @@ export default function AssignedOrders() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {completedOrders.map((order) => (
+              {completedOrders?.map((order) => (
                 <Card key={order._id} className="hover:shadow-md transition-shadow border-l-4 border-l-green-500">
                   <CardContent className="p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -513,74 +487,6 @@ export default function AssignedOrders() {
                         </div>
                         <div className="text-xs text-green-600 mt-1">
                           +PKR {Math.round(order.totalPrice * 0.2).toLocaleString()} earned
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Cancelled Orders Tab */}
-        <TabsContent value="cancelled" className="space-y-4">
-          {cancelledOrders.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center text-muted-foreground">
-                  <span className="text-4xl mb-3 block">❌</span>
-                  <p>No cancelled orders</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {cancelledOrders.map((order) => (
-                <Card key={order._id} className="hover:shadow-md transition-shadow border-l-4 border-l-red-500">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                      <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <Badge variant="outline" className="font-mono">
-                            #{order.orderNumber}
-                          </Badge>
-                          <span className="font-semibold">{order.userId?.name || order.fullName}</span>
-                          <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-200">
-                            ❌ CANCELLED
-                          </Badge>
-                          <div className="text-sm text-muted-foreground ml-auto">
-                            Cancelled: {formatDate(order.cancelledAt)}
-                          </div>
-                        </div>
-                        
-                        <div className="text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            <span>{order.address}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1">
-                          {order.items?.slice(0, 3).map((item, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {item.itemId?.name} × {item.quantity}
-                            </Badge>
-                          ))}
-                          {order.items?.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{order.items.length - 3} more
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-muted-foreground line-through">
-                          {formatCurrency(order.totalPrice)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Order Total
                         </div>
                       </div>
                     </div>

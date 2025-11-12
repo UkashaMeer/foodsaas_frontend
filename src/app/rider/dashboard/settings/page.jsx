@@ -131,16 +131,16 @@ export default function RiderSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 gap-4">
+          <TabsTrigger value="profile" className="flex items-center gap-2 py-2 cursor-pointer">
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="vehicle" className="flex items-center gap-2">
+          <TabsTrigger value="vehicle" className="flex items-center gap-2 py-2 cursor-pointer">
             <Bike className="h-4 w-4" />
             Vehicle
           </TabsTrigger>
-          <TabsTrigger value="location" className="flex items-center gap-2">
+          <TabsTrigger value="location" className="flex items-center gap-2 py-2 cursor-pointer">
             <MapPin className="h-4 w-4" />
             Location
           </TabsTrigger>

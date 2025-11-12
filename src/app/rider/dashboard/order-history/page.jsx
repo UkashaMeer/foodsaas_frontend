@@ -3,17 +3,16 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent} from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { useUserLoginState } from "@/store/useUserLoginState"
 import { getOrderHistory } from "@/api/rider/dashboard"
 import { Package, DollarSign, Calendar, MapPin } from "lucide-react"
 
 export default function OrderHistory() {
-  const { userData } = useUserLoginState()
+  
   const [period, setPeriod] = useState('today')
-  const riderId = userData?._id
+  const riderId = localStorage.getItem("riderId")
 
   const { data: historyData, isLoading } = useQuery({
     queryKey: ['order-history', riderId, period],
@@ -86,11 +85,11 @@ export default function OrderHistory() {
 
       {/* Period Tabs */}
       <Tabs value={period} onValueChange={setPeriod}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="today">Today</TabsTrigger>
-          <TabsTrigger value="week">This Week</TabsTrigger>
-          <TabsTrigger value="month">This Month</TabsTrigger>
-          <TabsTrigger value="all">All Time</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 gap-4 mb-2">
+          <TabsTrigger value="today" className="py-2" >Today</TabsTrigger>
+          <TabsTrigger value="week" className="py-2" >This Week</TabsTrigger>
+          <TabsTrigger value="month" className="py-2" >This Month</TabsTrigger>
+          <TabsTrigger value="all" className="py-2" >All Time</TabsTrigger>
         </TabsList>
 
         <TabsContent value={period} className="space-y-4">
@@ -112,7 +111,7 @@ export default function OrderHistory() {
           ) : (
             <div className="space-y-4">
               {historyData.orders.map((order) => (
-                <Card key={order._id} className="hover:shadow-md transition-shadow">
+                <Card key={order._id} className="hover:shadow-md transition-shadow py-0!">
                   <CardContent className="p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                       <div className="space-y-2 flex-1">

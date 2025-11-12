@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -63,8 +63,8 @@ export default function RiderDashboard() {
     // useEffect use karo data set karne ke liye
     useEffect(() => {
         if (getRiderByUserIdData?.rider) {
-            console.log("Setting rider data:", getRiderByUserIdData.rider)
             setRider(getRiderByUserIdData.rider)
+            localStorage.setItem("riderId", getRiderByUserIdData.rider?._id)
             
             // Auto-start timer if rider is online in backend
             if (getRiderByUserIdData.rider.status === 'ONLINE') {
@@ -101,15 +101,12 @@ export default function RiderDashboard() {
     // Update local state when data loads
     useEffect(() => {
         if (statsData) {
-            console.log("Stats data:", statsData)
             setDashboardStats(statsData.stats)
         }
         if (ordersData) {
-            console.log("Available orders:", ordersData)
             setAvailableOrders(ordersData.availableOrders || [])
         }
         if (assignedOrdersData) {
-            console.log("Assigned orders:", assignedOrdersData)
             setAssignedOrders(assignedOrdersData.assignedOrders || [])
         }
     }, [statsData, ordersData, assignedOrdersData, setDashboardStats, setAvailableOrders, setAssignedOrders])
@@ -197,19 +194,7 @@ export default function RiderDashboard() {
         return `PKR ${amount?.toLocaleString() || '0'}`
     }
 
-    // Check if rider has current order
     const hasCurrentOrder = rider?.currentOrder?.orderId
-
-    // Debug logs
-    console.log("Current state:", {
-        riderId,
-        rider,
-        onlineStatus,
-        dashboardStats,
-        availableOrders: availableOrders?.length,
-        assignedOrders: assignedOrdersData?.assignedOrders?.length,
-        getRiderByUserIdData: getRiderByUserIdData
-    })
 
     if (!isRider) {
         return (
@@ -379,7 +364,7 @@ export default function RiderDashboard() {
 
             {/* Available Orders & Quick Actions */}
             <Tabs defaultValue="available" className="space-y-4">
-                <TabsList>
+                <TabsList className="flex items-center gap-4">
                     <TabsTrigger value="available">Available Orders</TabsTrigger>
                     <TabsTrigger value="quick">Quick Actions</TabsTrigger>
                 </TabsList>

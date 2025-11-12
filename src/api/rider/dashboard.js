@@ -33,6 +33,11 @@ export const getAssignedOrders = async (riderId) => {
     return res.data
 }
 
+export const getRiderOrdersCompletedToday = async (riderId) => {
+    const res = await axiosClient.get(`/riders/orders-completed-today/${riderId}`)
+    return res.data
+}
+
 // Get order history
 export const getOrderHistory = async (riderId, period = "all") => {
     const res = await axiosClient.get(`/riders/order-history/${riderId}?period=${period}`)
