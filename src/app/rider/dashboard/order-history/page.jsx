@@ -3,17 +3,18 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Card, CardContent} from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { getOrderHistory } from "@/api/rider/dashboard"
 import { Package, DollarSign, Calendar, MapPin } from "lucide-react"
 
 export default function OrderHistory() {
-  
-  const [period, setPeriod] = useState('today')
-  const riderId = localStorage.getItem("riderId")
 
+  const [period, setPeriod] = useState('today')
+  const {
+    riderId,
+  } = useRiderStore()
   const { data: historyData, isLoading } = useQuery({
     queryKey: ['order-history', riderId, period],
     queryFn: () => getOrderHistory(riderId, period),
@@ -73,9 +74,9 @@ export default function OrderHistory() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {period === 'today' ? 'Today' : 
-                 period === 'week' ? 'This Week' : 
-                 period === 'month' ? 'This Month' : 'All Time'}
+                {period === 'today' ? 'Today' :
+                  period === 'week' ? 'This Week' :
+                    period === 'month' ? 'This Month' : 'All Time'}
               </div>
               <div className="text-sm text-muted-foreground">Period</div>
             </div>
@@ -122,7 +123,7 @@ export default function OrderHistory() {
                             DELIVERED
                           </Badge>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-muted-foreground" />
