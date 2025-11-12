@@ -7,6 +7,7 @@ export const useRiderStore = create(
     (set, get) => ({
       // State
       rider: null,
+      riderId: null, // ✅ Add riderId in store
       dashboardStats: null,
       availableOrders: [],
       assignedOrders: [],
@@ -20,10 +21,14 @@ export const useRiderStore = create(
       // Actions
       setRider: (rider) => set({ 
         rider,
+        riderId: rider?._id || null, // ✅ Set riderId automatically
         onlineStatus: rider?.status || 'OFFLINE',
       }),
+      
+      // ✅ Add setRiderId action
+      setRiderId: (riderId) => set({ riderId }),
+      
       setDashboardStats: (stats) => set({ dashboardStats: stats }),
-      setAvailableOrders: (orders) => set({ availableOrders: orders }),
       setAssignedOrders: (orders) => set({ assignedOrders: orders }),
       setOrdersCompletedToday: (orders) => set({ ordersCompletedToday: orders }),
       setOrderHistory: (history) => set({ orderHistory: history }),
@@ -61,9 +66,10 @@ export const useRiderStore = create(
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
       },
 
-      // ✅ Clear all data (logout ke liye)
+      // Clear all data (logout ke liye)
       clearStore: () => set({
         rider: null,
+        riderId: null, // ✅ Clear riderId too
         dashboardStats: null,
         availableOrders: [],
         assignedOrders: [],
@@ -75,10 +81,10 @@ export const useRiderStore = create(
       })
     }),
     {
-      name: 'rider-storage', // localStorage key
-      // ✅ Selective persistence - timerInterval ko exclude karo
+      name: 'rider-storage',
       partialize: (state) => ({
         rider: state.rider,
+        riderId: state.riderId, // ✅ Persist riderId
         dashboardStats: state.dashboardStats,
         availableOrders: state.availableOrders,
         assignedOrders: state.assignedOrders,
@@ -87,7 +93,6 @@ export const useRiderStore = create(
         currentPeriod: state.currentPeriod,
         onlineStatus: state.onlineStatus,
         workTimer: state.workTimer,
-        // timerInterval ko persist nahi karenge
       })
     }
   )

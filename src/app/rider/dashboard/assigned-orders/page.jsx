@@ -6,38 +6,68 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useUserLoginState } from "@/store/useUserLoginState"
 import { useRiderStore } from "@/store/useRiderStore"
-import { getAssignedOrders, updateOrderStatus, getRiderByUserId, getRiderOrdersCompletedToday } from "@/api/rider/dashboard"
+import { getAssignedOrders, updateOrderStatus, getRiderOrdersCompletedToday } from "@/api/rider/dashboard"
 import { Package, MapPin, Clock, CheckCircle, Truck, User, Phone, Navigation, ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { getUserId } from "@/utils/auth"
 
 export default function AssignedOrders() {
-  const { rider, setRider, setAssignedOrders, assignedOrders, ordersCompletedToday, setOrdersCompletedToday } = useRiderStore()
+  const { 
+    rider, 
+    riderId,
+    setRider, 
+    setAssignedOrders, 
+    assignedOrders, 
+    ordersCompletedToday, 
+    setOrdersCompletedToday 
+  } = useRiderStore()
+  
   const queryClient = useQueryClient()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('current')
+  const [isClient, setIsClient] = useState(false)
 
-  const riderId = localStorage.getItem('riderId')
+  // ✅ Fix: Wait for client-side rendering
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Fetch assigned orders
-  const { data: assignedOrdersData, isLoading, refetch } = useQuery({
+  const { 
+    data: assignedOrdersData, 
+    isLoading, 
+    refetch,
+    error: assignedOrdersError 
+  } = useQuery({
     queryKey: ['assigned-orders', riderId],
     queryFn: () => getAssignedOrders(riderId),
-    enabled: !!riderId,
+    enabled: !!riderId && isClient, // ✅ Only enable when riderId exists and we're on client
     refetchInterval: 10000,
     onSuccess: (data) => {
       setAssignedOrders(data.assignedOrders || [])
+    },
+    onError: (error) => {
+      console.error('Error fetching assigned orders:', error)
+      toast.error("Failed to load assigned orders")
     }
   })
-  const { data: orderCompletedTodayData, isLoading: orderCompletedTodayLoading } = useQuery({
+
+  const { 
+    data: orderCompletedTodayData, 
+    isLoading: orderCompletedTodayLoading,
+    error: completedOrdersError 
+  } = useQuery({
     queryKey: ['orders-completed-today', riderId],
     queryFn: () => getRiderOrdersCompletedToday(riderId),
+    enabled: !!riderId && isClient, // ✅ Only enable when riderId exists and we're on client
     onSuccess: (data) => {
-      setOrdersCompletedToday(data.ordersAssignedToday || [])
+      setOrdersCompletedToday(data.ordersCompletedToday || [])
+    },
+    onError: (error) => {
+      console.error('Error fetching completed orders:', error)
+      toast.error("Failed to load completed orders")
     }
   })
 
@@ -51,6 +81,7 @@ export default function AssignedOrders() {
     },
     onError: (error) => {
       toast.error("Failed to update order status")
+      console.error('Update status error:', error)
     }
   })
 
@@ -59,6 +90,37 @@ export default function AssignedOrders() {
       setAssignedOrders(assignedOrdersData.assignedOrders || [])
     }
   }, [assignedOrdersData, setAssignedOrders])
+
+  // ✅ Show loading while checking authentication
+  if (!isClient) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    )
+  }
+
+  // ✅ Show authentication required message
+  if (!riderId) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <div className="mb-4">
+              <Package className="h-12 w-12 mx-auto text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Authentication Required</h3>
+            <p className="text-muted-foreground mb-4">
+              Please log in as a rider to view assigned orders.
+            </p>
+            <Button onClick={() => router.push('/rider/login')}>
+              Go to Rider Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const formatCurrency = (amount) => {
     return `PKR ${amount?.toLocaleString() || '0'}`
@@ -123,7 +185,6 @@ export default function AssignedOrders() {
   }
 
   const handleViewRoute = (address) => {
-    // Open in Google Maps
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
     window.open(mapsUrl, '_blank')
   }
@@ -172,15 +233,8 @@ export default function AssignedOrders() {
   const currentOrders = assignedOrders?.filter(order => 
     order.status !== 'DELIVERED' && order.status !== 'CANCELLED'
   ) || []
-  const completedOrders = orderCompletedTodayData?.ordersCompletedToday
-
-  if (!riderId) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading rider information...</div>
-      </div>
-    )
-  }
+  
+  const completedOrders = orderCompletedTodayData?.ordersCompletedToday || []
 
   return (
     <div className="space-y-6">
@@ -229,7 +283,7 @@ export default function AssignedOrders() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{completedOrders?.length}</div>
+            <div className="text-2xl font-bold text-green-600">{completedOrders.length}</div>
             <div className="text-sm text-muted-foreground">Completed</div>
           </CardContent>
         </Card>
@@ -243,7 +297,7 @@ export default function AssignedOrders() {
           </TabsTrigger>
           <TabsTrigger value="completed" className="flex items-center gap-2 py-2 cursor-pointer">
             <CheckCircle className="h-4 w-4" />
-            Completed ({completedOrders?.length})
+            Completed ({completedOrders.length})
           </TabsTrigger>
         </TabsList>
 
@@ -424,7 +478,7 @@ export default function AssignedOrders() {
 
         {/* Completed Orders Tab */}
         <TabsContent value="completed" className="space-y-4">
-          {completedOrders?.length === 0 ? (
+          {completedOrders.length === 0 ? (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center text-muted-foreground">
@@ -436,7 +490,7 @@ export default function AssignedOrders() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {completedOrders?.map((order) => (
+              {completedOrders.map((order) => (
                 <Card key={order._id} className="hover:shadow-md transition-shadow border-l-4 border-l-green-500">
                   <CardContent className="p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
