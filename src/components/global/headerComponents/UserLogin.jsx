@@ -1,3 +1,5 @@
+"use client"
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -37,30 +39,75 @@ export default function UserLogin() {
 
     return (
         <>
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-1 sm:gap-2'>
                 {isLogin ? (
                     <DropdownMenu>
-                        <DropdownMenuTrigger>
-                            <div className='bg-primary p-2 rounded-md relative'>
-                                <User className='text-white w-5 h-5 cursor-pointer' />
-                            </div>
+                        <DropdownMenuTrigger asChild>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-9 w-9 sm:h-9 sm:w-9 rounded-md bg-primary hover:bg-primary/90"
+                            >
+                                <User className='text-white w-4 h-4 sm:w-6 sm:h-6' />
+                            </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[200px]">
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/profile")}>
-                                <User />
-                                Profile
+                        <DropdownMenuContent align="end" className="w-[180px] sm:w-[200px]">
+                            <DropdownMenuItem 
+                                className="cursor-pointer gap-2"
+                                onClick={() => router.push("/profile")}
+                            >
+                                <User className="w-4 h-4" />
+                                <span>Profile</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer" onClick={handleLogOut}>
-                                <LogOut />
-                                Logout
+                            <DropdownMenuItem 
+                                className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                                onClick={handleLogOut}
+                            >
+                                <LogOut className="w-4 h-4" />
+                                <span>Logout</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
                 ) : (
-                    <div className='flex items-center gap-2'>
-                        <Button onClick={() => openLogin()}><Lock />Login</Button>
-                        <Button onClick={() => openRegister()}><Lock />Register</Button>
+                    <div className='flex items-center gap-1 sm:gap-2'>
+                        {/* Mobile - Icon buttons */}
+                        <div className="sm:hidden flex items-center gap-1">
+                            <Button 
+                                onClick={() => openLogin()} 
+                                size="icon"
+                                className="h-9 w-9 rounded-md"
+                            >
+                                <Lock className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                                onClick={() => openRegister()} 
+                                size="icon"
+                                variant="outline"
+                                className="h-9 w-9 rounded-md"
+                            >
+                                <User className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        
+                        {/* Desktop - Text buttons */}
+                        <div className="hidden sm:flex items-center gap-2">
+                            <Button 
+                                onClick={() => openLogin()} 
+                                variant="outline"
+                                className="gap-2"
+                            >
+                                <Lock className="w-4 h-4" />
+                                Login
+                            </Button>
+                            <Button 
+                                onClick={() => openRegister()} 
+                                className="gap-2"
+                            >
+                                <User className="w-4 h-4" />
+                                Register
+                            </Button>
+                        </div>
                     </div>
                 )}
             </div>

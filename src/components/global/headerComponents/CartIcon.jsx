@@ -1,19 +1,27 @@
+// components/headerComponents/CartIcon.jsx
+"use client"
+
 import { useCartState } from "@/store/useCartState";
 import { ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function CartIcon() {
-
     const { openCart, count } = useCartState()
 
     return (
-        <div className='bg-primary p-2 rounded-md relative' onClick={openCart}>
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={openCart}
+            className="relative h-9 w-9 sm:h-9 sm:w-9 rounded-lg bg-primary hover:bg-primary/90"
+        >
+            <ShoppingBag className='text-white w-4 h-4 sm:w-6 sm:h-6' />
+            
             {count > 0 && (
-                <span className='absolute px-2 py-[3px] bg-primary rounded-sm top-[-40%] right-[-25%] z-10 block text-white text-xs border-white border'>
-                    {count}
+                <span className='absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-destructive text-white text-xs rounded-full border-2 border-background flex items-center justify-center font-medium'>
+                    {count > 99 ? '99+' : count}
                 </span>
             )}
-
-            <ShoppingBag className='text-white cursor-pointer w-5 h-5' />
-        </div>
+        </Button>
     )
 }

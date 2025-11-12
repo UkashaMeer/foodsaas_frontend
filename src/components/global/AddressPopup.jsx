@@ -31,7 +31,6 @@ const AddressPopup = () => {
   const markerRef = useRef(null)
   const searchTimeoutRef = useRef(null)
 
-  // Open popup on page load if no address
   useEffect(() => {
     const hasAddress = localStorage.getItem('userAddress')
     if (!hasAddress) {
@@ -39,7 +38,6 @@ const AddressPopup = () => {
     }
   }, [setAddressPopupOpen])
 
-  // Load Leaflet CSS & JS
   useEffect(() => {
     if (isAddressPopupOpen && !window.L) {
       const link = document.createElement('link')
@@ -63,7 +61,6 @@ const AddressPopup = () => {
     }
   }, [isAddressPopupOpen])
 
-  // Initialize Leaflet Map
   const initMap = () => {
     if (!window.L) {
       console.error('Leaflet not loaded')
@@ -274,13 +271,13 @@ const AddressPopup = () => {
   return (
     <Dialog open={isAddressPopupOpen} onOpenChange={setAddressPopupOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0">
-        <DialogHeader className="p-6 pb-0">
+        <DialogHeader className="p-4 pb-0">
           <DialogTitle className="text-xl font-bold">Select Your Delivery Address</DialogTitle>
         </DialogHeader>
         
-        <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+        <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
           {/* Map Section */}
-          <Card>
+          <Card className="py-0!">
             <CardContent className="p-0">
               <div className="h-64 bg-muted rounded-t-lg overflow-hidden">
                 <div ref={mapRef} className="w-full h-full"></div>

@@ -1,3 +1,4 @@
+// components/auth/VerifyEmailForm.jsx
 import {
     InputOTP,
     InputOTPGroup,
@@ -16,7 +17,6 @@ import { useResendOTP } from "@/api/user/auth/useResendOTP"
 import { useUserLoginState } from "@/store/useUserLoginState"
 
 export default function VerifyEmailForm() {
-
     const { mutate, isPending } = useVerifyEmail()
     const { mutate: resendOTPMutate, isPending: resendOTPIsPending } = useResendOTP()
     const { closeOTP, showOTP } = useAuthDialogState()
@@ -31,7 +31,7 @@ export default function VerifyEmailForm() {
 
         resendOTPMutate(payload, {
             onSuccess: (res) => {
-                toast.success("OTP resend to your email.")
+                toast.success("OTP sent to your email.")
             },
             onError: (err) => toast.error(err?.response?.data?.error || "Something went wrong!"),
         })
@@ -48,7 +48,7 @@ export default function VerifyEmailForm() {
 
         mutate(payload, {
             onSuccess: (res) => {
-                toast.success("OTP Verified Successfully.")
+                toast.success("Email verified successfully!")
 
                 localStorage.setItem("token", res.token)
                 localStorage.removeItem("email")
@@ -57,10 +57,9 @@ export default function VerifyEmailForm() {
                 closeOTP()
             },
             onError: (err) => toast.error(err?.response?.data?.error || "Something went wrong!"),
-            onMutate: (err) => toast.message("Verifying")
+            onMutate: () => toast.message("Verifying OTP...")
         })
     }
-
 
     return (
         <Dialog
@@ -68,44 +67,104 @@ export default function VerifyEmailForm() {
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
         >
-            <DialogContent className="w-full">
+            <DialogContent className="w-full max-w-sm p-2 sm:max-w-md">
                 <form
-                    className="w-full flex flex-col items-center justify-center gap-1 mt-4"
+                    className="w-full flex flex-col items-center justify-center gap-4 sm:gap-6 p-2 sm:p-6"
                     onSubmit={handleSubmit}
                 >
-                    <h1 className="text-2xl font-bold">Verify Your Email</h1>
-                    <p className="text-sm mb-4 text-center">  We’ve sent a 6-digit verification code to your email address. Please check your inbox and enter the code below to continue.
-                    </p>
+                    {/* Header */}
+                    <div className="text-center space-y-2">
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+                            Verify Your Email
+                        </h1>
+                        <p className="text-xs sm:text-sm text-muted-foreground max-w-sm">
+                            We've sent a 6-digit code to your email. Enter it below to continue.
+                        </p>
+                    </div>
 
-                    <InputOTP
-                        maxLength={6}
-                        value={otp}
-                        onChange={(value) => setOtp(value)}
-                    >
-                        <InputOTPGroup>
-                            {[...Array(6)].map((_, i) => (
-                                <InputOTPSlot
-                                    key={i}
-                                    index={i}
-                                    disabled={isPending}
-                                    className="w-16 h-16 text-2xl"
-                                />
-                            ))}
-                        </InputOTPGroup>
-                    </InputOTP>
-                    <div className="flex gap-4">
-                        <Button className="mt-4 cursor-pointer" type="submit">
-                            {
-                                isPending ? "Verifying OTP..." : "Verify OTP"
-                            }
+                    {/* OTP Input */}
+                    <div className="w-full flex justify-center">
+                        <InputOTP
+                            maxLength={6}
+                            value={otp}
+                            onChange={(value) => setOtp(value)}
+                            disabled={isPending}
+                        >
+                            <InputOTPGroup className="gap-2 sm:gap-3">
+                                {[...Array(6)].map((_, i) => (
+                                    <InputOTPSlot
+                                        key={i}
+                                        index={i}
+                                        disabled={isPending}
+                                        className={`
+                                            w-10 h-10 sm:w-12 sm:h-12 
+                                            text-lg sm:text-xl 
+                                            border-2 
+                                            rounded-lg
+                                            transition-all
+                                            focus:ring-2 focus:ring-primary
+                                            disabled:opacity-50 disabled:cursor-not-allowed
+                                            ${otp?.[i] ? 'border-primary' : 'border-input'}
+                                        `}
+                                    />
+                                ))}
+                            </InputOTPGroup>
+                        </InputOTP>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="w-full space-y-3">
+                        {/* Verify Button */}
+                        <Button
+                            type="submit"
+                            disabled={!otp || otp.length !== 6 || isPending}
+                            className="w-full h-11 sm:h-12 text-sm sm:text-base font-medium"
+                            size="lg"
+                        >
+                            {isPending ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    Verifying...
+                                </div>
+                            ) : (
+                                "Verify Email"
+                            )}
+                        </Button>
+
+                        {/* Resend OTP Button */}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleResendOTP}
+                            disabled={resendOTPIsPending}
+                            className="w-full h-10 text-sm sm:text-base"
+                        >
+                            {resendOTPIsPending ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                    Sending...
+                                </div>
+                            ) : (
+                                "Resend Verification Code"
+                            )}
                         </Button>
                     </div>
+
+                    {/* Help Text */}
+                    <div className="text-center space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                            Didn't receive the code?
+                        </p>
+                        <button
+                            type="button"
+                            onClick={handleResendOTP}
+                            disabled={resendOTPIsPending}
+                            className="text-xs text-primary hover:text-primary/80 underline transition-colors disabled:opacity-50"
+                        >
+                            Click here to resend
+                        </button>
+                    </div>
                 </form>
-                <Button className="mt-4 cursor-pointer" onClick={handleResendOTP}>
-                    {
-                        resendOTPIsPending ? "Resending OTP" : "Resend OTP"
-                    }
-                </Button>
             </DialogContent>
         </Dialog>
     )

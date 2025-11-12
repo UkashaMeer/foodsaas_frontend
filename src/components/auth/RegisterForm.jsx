@@ -1,9 +1,11 @@
+"use client"
+
 import {
     Dialog,
     DialogContent,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { useRegister } from "@/api/user/auth/useRegister"
@@ -15,11 +17,37 @@ export default function RegisterForm() {
     const { mutate, isPending } = useRegister()
     const { showRegister, closeRegister, openOTP, openLogin } = useAuthDialogState()
     const [form, setForm] = useState({ name: "", email: "", phoneNumber: "", password: "" })
+    const [addresses, setAddresses] = useState([])
+    const [isClient, setIsClient] = useState(false)
+
+    useEffect(() => {
+        setIsClient(true)
+
+        if (typeof window !== 'undefined') {
+            const savedAddress = localStorage.getItem('userAddress')
+            if (savedAddress) {
+                try {
+                    const addressData = JSON.parse(savedAddress)
+                    setAddresses([addressData])
+                } catch (error) {
+                    console.error('Error parsing saved address:', error)
+                }
+            }
+        }
+    }, [])
 
     const handleSubmit = (e) => {
         e.preventDefault()
 
-        mutate(form, {
+        const payload = {
+            name: form.name,
+            email: form.email,
+            phoneNumber: form.phoneNumber,
+            password: form.password,
+            addresses: addresses
+        }
+
+        mutate(payload, {
             onSuccess: () => {
                 toast.success("Registered Successfully")
                 localStorage.setItem("email", form.email)
@@ -77,7 +105,7 @@ export default function RegisterForm() {
                     </Button>
                 </form>
                 <span className="text-sm text-gray-500 mx-auto">
-                    Already have Accoount? <button className="text-primary cursor-pointer underline" onClick={() => {openLogin(); closeRegister();}}>Login</button>
+                    Already have Accoount? <button className="text-primary cursor-pointer underline" onClick={() => { openLogin(); closeRegister(); }}>Login</button>
                 </span>
             </DialogContent>
         </Dialog>

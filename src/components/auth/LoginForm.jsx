@@ -7,12 +7,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useUserLoginState } from "@/store/useUserLoginState";
 import { saveToken } from "@/utils/auth";
+import { Eye, EyeOff, Lock } from "lucide-react";
 
 export default function LoginForm() {
     const { mutate, isPending } = useLogin()
     const { checkLogin } = useUserLoginState()
     const { showLogin, closeLogin, openRegister } = useAuthDialogState()
     const [form, setForm] = useState({ email: "", password: "" })
+    const [showPassword, setShowPassword] = useState(false)
 
     const handleSubmit = (e) => {
         e.preventDefault()
@@ -49,14 +51,31 @@ export default function LoginForm() {
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         disabled={isPending}
                     />
-                    <Input
-                        type="password"
-                        placeholder="Enter Password"
-                        className=""
-                        value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
-                        disabled={isPending}
-                    />
+                    <div className="space-y-2">
+                        <label htmlFor="password" className="text-sm font-medium text-foreground">
+                            Password
+                        </label>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                            <Input
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Enter your password"
+                                value={form.password}
+                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                disabled={isPending}
+                                className="pl-10 pr-10"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
                     <Button type="submit" className="cursor-pointer">
                         {
                             isPending ? "Logining..." : "Login"
