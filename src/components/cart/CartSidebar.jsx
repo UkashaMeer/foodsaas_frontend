@@ -65,6 +65,7 @@ export default function CartSidebar() {
 
     const router = useRouter()
     const cartItems = data?.cartItems || []
+    console.log(cartItems)
     const totalAmount = cartItems.reduce((sum, item) => sum + item.subtotal, 0)
     const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 

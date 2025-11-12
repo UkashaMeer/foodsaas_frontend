@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export const useAuthDialogState = create((set) => ({
-    showRegister: true,
+    showRegister: false,
     showOTP: false,
     showLogin: false,
     openLogin: () => set({ showLogin: true }),

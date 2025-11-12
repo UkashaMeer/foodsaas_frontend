@@ -15,6 +15,7 @@ import { useAuthDialogState } from "@/store/useAuthDialogState"
 import { toast } from "sonner"
 import { useResendOTP } from "@/api/user/auth/useResendOTP"
 import { useUserLoginState } from "@/store/useUserLoginState"
+import { saveToken } from "@/utils/auth"
 
 export default function VerifyEmailForm() {
     const { mutate, isPending } = useVerifyEmail()
@@ -50,11 +51,18 @@ export default function VerifyEmailForm() {
             onSuccess: (res) => {
                 toast.success("Email verified successfully!")
 
-                localStorage.setItem("token", res.token)
+                // ✅ FIX: Use saveToken instead of localStorage.setItem
+                saveToken(res.token) // This saves in both localStorage AND cookies
+                
                 localStorage.removeItem("email")
                 localStorage.removeItem("guestId")
                 checkLogin()
                 closeOTP()
+
+                // ✅ Redirect after successful verification
+                setTimeout(() => {
+                    window.location.href = '/'
+                }, 1000)
             },
             onError: (err) => toast.error(err?.response?.data?.error || "Something went wrong!"),
             onMutate: () => toast.message("Verifying OTP...")

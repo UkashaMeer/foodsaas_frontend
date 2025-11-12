@@ -414,16 +414,6 @@ function CheckoutPageContent() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium mb-2">City</label>
-                                                <Input
-                                                    type="text"
-                                                    name="city"
-                                                    value={formData.city}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Karachi"
-                                                />
-                                            </div>
-                                            <div>
                                                 <label className="block text-sm font-medium mb-2">Delivery Instructions (Optional)</label>
                                                 <Input
                                                     type="text"

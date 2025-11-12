@@ -13,8 +13,7 @@ export const metadata = {
 
 export default function UserLayout({ children }) {
   return (
-    <html lang="en">
-      <body>
+      <div>
         <Toaster />
         <Providers>
           <Header />
@@ -22,7 +21,6 @@ export default function UserLayout({ children }) {
           <Footer />
           <CartSidebar />
         </Providers>
-      </body>
-    </html>
+      </div>
   );
 }
