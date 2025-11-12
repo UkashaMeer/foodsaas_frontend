@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { getOrderHistory } from "@/api/rider/dashboard"
 import { Package, DollarSign, Calendar, MapPin } from "lucide-react"
+import { useRiderStore } from "@/store/useRiderStore"
 
 export default function OrderHistory() {
 
