@@ -5,6 +5,11 @@ export const getRiderDashboardStats = async (riderId) => {
     return res.data
 }
 
+export const getOnlineRiders = async () => {
+    const res = await axiosClient.get(`/get-online-riders`)
+    return res.data
+}
+
 export const getAvailableOrders = async (riderId) => {
     const res = await axiosClient.get(`/riders/available-orders/${riderId}`)
     return res.data

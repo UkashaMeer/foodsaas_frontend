@@ -6,6 +6,7 @@ import { X, Plus, Minus, ShoppingCart, Clock, Star } from 'lucide-react'
 import { useAddToCart } from '@/api/user/cart/useAddToCart'
 import { toast } from 'sonner';
 import { useCartState } from '@/store/useCartState';
+import { useGuestStore } from '@/store/useGuestStore';
 
 
 export default function ItemDialog({ item, open, setOpen }) {
@@ -15,6 +16,7 @@ export default function ItemDialog({ item, open, setOpen }) {
     const {openCart} = useCartState()
     const [quantity, setQuantity] = useState(1)
     const [selectedAddons, setSelectedAddons] = useState({})
+    const { guestId } = useGuestStore()
 
     const imageUrl = item?.images?.[0]
     const discountPercentage = item?.isOnDiscount
@@ -64,7 +66,6 @@ export default function ItemDialog({ item, open, setOpen }) {
 
     const handleAddToCart = async () => {
         let userId = null
-        let guestId = null
 
         const token = typeof window !== "undefined" && localStorage.getItem("token")
 
@@ -72,17 +73,10 @@ export default function ItemDialog({ item, open, setOpen }) {
             try {
                 const decoded = jwtDecode(token)
                 userId = decoded?._id
-                localStorage.removeItem("guestId")
             } catch (err) {
                 console.error("JWT Decode Error: ", err)
             }
-        } else {
-            guestId = localStorage.getItem("guestId")
-            if (!guestId) {
-                guestId = uuidv4()
-                localStorage.setItem("guestId", guestId)
-            }
-        }
+        } 
 
         const formattedAddons = Object.entries(selectedAddons).map(([addonId, optionIds]) => {
             const addon = item.addons.find(a => a._id === addonId);

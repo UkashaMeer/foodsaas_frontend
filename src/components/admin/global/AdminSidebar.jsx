@@ -47,7 +47,7 @@ export const AdminSidebar = () => {
     { id: "customers", url: "/admin/dashboard/customers", label: "Customers", icon: Users, badge: null },
     { id: "riders", url: "/admin/dashboard/riders", label: "Riders", icon: Motorbike, badge: null },
     { id: "transactions", url: "/admin/dashboard/transactions", label: "Transactions", icon: CreditCard, badge: null },
-    { id: "settings", url: "/admin/dashboard/setting", label: "Settings", icon: Settings, badge: null },
+    { id: "settings", url: "/admin/dashboard/settings", label: "Settings", icon: Settings, badge: null },
   ];
 
   return (

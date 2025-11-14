@@ -5,19 +5,21 @@ import { useState } from "react"
 import { Bell, User, LogOut, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { useUserLoginState } from "@/store/useUserLoginState"
 import { useRiderStore } from "@/store/useRiderStore"
+import { useRouter } from "next/navigation"
 
 const RiderHeader = () => {
-  const { userData, removeLogin } = useUserLoginState()
+  const { removeLogin } = useUserLoginState()
   const { onlineStatus, formatTimer } = useRiderStore()
-  const [notifications] = useState(3) // Mock notifications count
+  const [notifications] = useState(3)
+  const router = useRouter()
 
   const handleLogout = () => {
     removeLogin()
@@ -34,21 +36,21 @@ const RiderHeader = () => {
   }
 
   return (
-    <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="h-16 border-b bg-background/95 backdrop-blur">
       <div className="flex items-center justify-between h-full px-6">
         {/* Left Section */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="lg:hidden">
             <Menu className="h-5 w-5" />
           </Button>
-          
+
           {/* Online Status & Timer */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${getStatusColor(onlineStatus)}`} />
               <span className="text-sm font-medium capitalize">{onlineStatus.toLowerCase()}</span>
             </div>
-            
+
             {onlineStatus === 'ONLINE' && (
               <Badge variant="secondary" className="font-mono text-xs">
                 ⏱️ {formatTimer()}
@@ -69,29 +71,35 @@ const RiderHeader = () => {
             )}
           </Button>
 
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                <span className="hidden sm:block text-sm font-medium">
-                  {userData?.name || 'Rider'}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => window.location.href = '/rider/settings'}>
-                <User className="h-4 w-4 mr-2" />
-                Profile Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 sm:h-9 sm:w-9 rounded-md bg-primary hover:bg-primary/90"
+                >
+                  <User className='text-white w-4 h-4 sm:w-6 sm:h-6' />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[180px] sm:w-[200px]">
+                <DropdownMenuItem
+                  className="cursor-pointer gap-2"
+                  onClick={() => router.push("/rider/dashboard/settings")}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </header>

@@ -6,12 +6,22 @@ import MyOrders from '@/components/profile-page/MyOrders'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useQuery } from '@tanstack/react-query'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function Profile() {
-
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState("details")
+
+  // Check if user is coming from checkout
+  useEffect(() => {
+    const fromCheckout = searchParams.get('from')
+    if (fromCheckout === 'checkout') {
+      setActiveTab("orders")
+    }
+  }, [searchParams])
 
   const { data: userData , isPending: userIsPending, isError: userIsError, error: userError } = useQuery({
     queryKey: ["users"],
@@ -29,7 +39,7 @@ export default function Profile() {
 
   return (
     <div className='max-w-[1140px] mx-auto px-4 py-10'>
-      <Tabs className="flex gap-6"  value={activeTab} onValueChange={setActiveTab} >
+      <Tabs className="flex gap-6" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="flex items-center gap-4">
           <TabsTrigger className="cursor-pointer p-4" value='details'>My Details</TabsTrigger>
           <TabsTrigger className="cursor-pointer p-4" value='orders'>My Orders</TabsTrigger>

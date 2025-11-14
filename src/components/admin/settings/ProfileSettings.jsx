@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,9 +14,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useUser } from '@/api/user/auth/useUser'
 import { Spinner } from '@/components/ui/spinner'
 
-export default function RiderProfile() {
+export function ProfileSettings() {
   const { data: userData, isLoading } = useQuery({
-    queryKey: ["rider"],
+    queryKey: ["admin"],
     queryFn: useUser,
   })
   const queryClient = useQueryClient()
@@ -68,7 +66,7 @@ export default function RiderProfile() {
     mutate({ payload, file }, {
       onSuccess: (res) => {
         toast.success("Profile Updated Successfully.")
-        queryClient.invalidateQueries(['rider'])
+        queryClient.invalidateQueries(['admin'])
       },
       onError: (err) => {
         toast.error("Something went wrong in update profile!")
@@ -185,7 +183,7 @@ export default function RiderProfile() {
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
               <div>
-                <Badge className="bg-primary/20 text-primary border-primary/20">{userData.user.role}</Badge>
+                <Badge className="bg-primary/20 text-primary border-primary/20">ADMIN</Badge>
               </div>
             </div>
           </div>

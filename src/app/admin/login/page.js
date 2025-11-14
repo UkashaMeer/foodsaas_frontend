@@ -33,7 +33,6 @@ export default function LoginPage() {
             onSuccess: (res) => {
                 try {
                     toast.success("Login Successfully.")
-                    // Save token in both localStorage and cookies
                     saveToken(res.token)
                     localStorage.removeItem("guestId")
 

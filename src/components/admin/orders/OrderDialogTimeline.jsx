@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-const { AlertCircle, CheckCircle2, ShoppingCart, CookingPot, Bike, Home } = require("lucide-react")
+const { AlertCircle, CheckCircle2, ShoppingCart, CookingPot, Bike, Home, ShoppingBag } = require("lucide-react")
 const { useState, useEffect } = require("react")
 
 export const OrderDialogTimeline = ({ currentStatus }) => {
@@ -18,9 +18,9 @@ export const OrderDialogTimeline = ({ currentStatus }) => {
       color: 'bg-primary'
     },
     {
-      key: 'PREPARING',
-      label: 'Preparing Food',
-      icon: CookingPot,
+      key: 'PICKED_BY_RIDER',
+      label: 'Picked By Rider',
+      icon: ShoppingBag,
       color: 'bg-primary'
     },
     {

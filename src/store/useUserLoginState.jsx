@@ -1,10 +1,12 @@
+// stores/useUserLoginState.js - Updated
 import { create } from "zustand";
 import { getToken, decodeToken, removeToken, getTokenFromCookie, saveToken } from "@/utils/auth";
+import { useGuestStore } from "./useGuestStore";
 
 export const useUserLoginState = create((set, get) => {
-  // Initialize state from token
   const token = getToken() || getTokenFromCookie();
   const userData = token ? decodeToken(token) : null;
+  console.log(userData)
 
   return {
     isLogin: !!token,
@@ -25,6 +27,9 @@ export const useUserLoginState = create((set, get) => {
             userId: userData?._id,
             userName: userData?.name
           });
+          
+          const guestStore = useGuestStore.getState();
+          guestStore.clearGuestData();
         } catch (error) {
           console.error('Token decode error in checkLogin:', error);
           removeToken();
@@ -56,6 +61,9 @@ export const useUserLoginState = create((set, get) => {
         userId: null,
         userName: null
       });
+      
+      const guestStore = useGuestStore.getState();
+      guestStore.initializeGuestId();
     },
 
     setLogin: (token) => {
@@ -69,6 +77,10 @@ export const useUserLoginState = create((set, get) => {
           userId: userData?._id,
           userName: userData?.name
         });
+        
+        const guestStore = useGuestStore.getState();
+        guestStore.clearGuestData();
+        
       } catch (error) {
         console.error('Token decode error in setLogin:', error);
         removeToken();
@@ -82,7 +94,6 @@ export const useUserLoginState = create((set, get) => {
       }
     },
 
-    // Additional helper methods
     isOwner: () => get().userRole === 'OWNER',
     isRider: () => get().userRole === 'RIDER',
     isCustomer: () => get().userRole === 'CUSTOMER',

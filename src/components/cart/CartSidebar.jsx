@@ -16,6 +16,7 @@ import { CartItemCard } from './CartItemCard';
 import { useAuthDialogState } from '@/store/useAuthDialogState';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useGuestStore } from '@/store/useGuestStore';
 
 
 export default function CartSidebar() {
@@ -23,11 +24,11 @@ export default function CartSidebar() {
     const { showCart, closeCart, setCount } = useCartState()
     const { openRegister } = useAuthDialogState()
     const [data, setData] = useState(null)
+    const { guestId } = useGuestStore()
 
     useEffect(() => {
 
         let userId = null
-        let guestId = null
 
         const token = typeof window !== "undefined" && localStorage.getItem("token")
 
@@ -35,15 +36,8 @@ export default function CartSidebar() {
             try {
                 const decoded = jwtDecode(token)
                 userId = decoded?._id
-                localStorage.removeItem("guestId")
             } catch (err) {
                 console.error("JWT Decode Error: ", err)
-            }
-        } else {
-            guestId = localStorage.getItem("guestId")
-            if (!guestId) {
-                guestId = uuidv4()
-                localStorage.setItem("guestId", guestId)
             }
         }
 

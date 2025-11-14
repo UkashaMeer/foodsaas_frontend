@@ -1,13 +1,13 @@
 import { jwtDecode } from 'jwt-decode'
-import { v4 as uuidv4 } from 'uuid';
 import { deleteCartItem } from '@/api/user/cart/deleteCartItem';
-import { toast } from 'sonner';
 import { Plus, Minus, Trash2, X } from "lucide-react"
 import { updateCartItem } from '@/api/user/cart/updateCartItem';
+import { useGuestStore } from '@/store/useGuestStore';
 
 export const CartItemCard = ({ item, setData }) => {
     const { mutate } = deleteCartItem()
     const { mutate: updateCart } = updateCartItem()
+    const { guestId } = useGuestStore()
     const { itemId, quantity, selectedAddons, subtotal } = item
     const basePrice = itemId.isOnDiscount ? itemId.discountPrice : itemId.price
 
@@ -19,7 +19,6 @@ export const CartItemCard = ({ item, setData }) => {
         if (newQuantity < 1) return
 
         let userId = null
-        let guestId = null
 
         const token = typeof window !== "undefined" && localStorage.getItem("token")
 
@@ -27,15 +26,8 @@ export const CartItemCard = ({ item, setData }) => {
             try {
                 const decoded = jwtDecode(token)
                 userId = decoded?._id
-                localStorage.removeItem("guestId")
             } catch (err) {
                 console.error("JWT Decode Error: ", err)
-            }
-        } else {
-            guestId = localStorage.getItem("guestId")
-            if (!guestId) {
-                guestId = uuidv4()
-                localStorage.setItem("guestId", guestId)
             }
         }
 
@@ -77,7 +69,6 @@ export const CartItemCard = ({ item, setData }) => {
 
     const handleDeleteCartItem = (cartItemId) => {
         let userId = null
-        let guestId = null
 
         const token = typeof window !== "undefined" && localStorage.getItem("token")
 
@@ -85,15 +76,8 @@ export const CartItemCard = ({ item, setData }) => {
             try {
                 const decoded = jwtDecode(token)
                 userId = decoded?._id
-                localStorage.removeItem("guestId")
             } catch (err) {
                 console.error("JWT Decode Error: ", err)
-            }
-        } else {
-            guestId = localStorage.getItem("guestId")
-            if (!guestId) {
-                guestId = uuidv4()
-                localStorage.setItem("guestId", guestId)
             }
         }
 

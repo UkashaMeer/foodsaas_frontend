@@ -30,6 +30,7 @@ export const useRiderStore = create(
       
       setDashboardStats: (stats) => set({ dashboardStats: stats }),
       setAssignedOrders: (orders) => set({ assignedOrders: orders }),
+      setAvailableOrders: (orders) => set({ availableOrders: orders }),
       setOrdersCompletedToday: (orders) => set({ ordersCompletedToday: orders }),
       setOrderHistory: (history) => set({ orderHistory: history }),
       setCurrentPeriod: (period) => set({ currentPeriod: period }),

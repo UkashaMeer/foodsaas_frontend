@@ -139,7 +139,7 @@ export default function AssignedOrders() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'ACCEPTED': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'PICKED_UP': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'PICKED_BY_RIDER': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
       case 'ON_THE_WAY': return 'bg-orange-100 text-orange-800 border-orange-200'
       case 'DELIVERED': return 'bg-green-100 text-green-800 border-green-200'
       case 'CANCELLED': return 'bg-red-100 text-red-800 border-red-200'
@@ -150,7 +150,7 @@ export default function AssignedOrders() {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'ACCEPTED': return '✅'
-      case 'PICKED_UP': return '📦'
+      case 'PICKED_BY_RIDER': return '📦'
       case 'ON_THE_WAY': return '🚚'
       case 'DELIVERED': return '🎉'
       case 'CANCELLED': return '❌'
@@ -160,8 +160,8 @@ export default function AssignedOrders() {
 
   const getNextStatus = (currentStatus) => {
     switch (currentStatus) {
-      case 'ACCEPTED': return 'PICKED_UP'
-      case 'PICKED_UP': return 'ON_THE_WAY'
+      case 'ACCEPTED': return 'PICKED_BY_RIDER'
+      case 'PICKED_BY_RIDER': return 'ON_THE_WAY'
       case 'ON_THE_WAY': return 'DELIVERED'
       default: return null
     }
@@ -195,13 +195,13 @@ export default function AssignedOrders() {
     if (!nextStatus) return null
 
     const buttonConfig = {
-      'PICKED_UP': { 
+      'PICKED_BY_RIDER': { 
         text: 'Mark as Picked Up', 
         variant: 'default',
         icon: '📦'
       },
       'ON_THE_WAY': { 
-        text: 'Start Delivery', 
+        text: 'On The Way', 
         variant: 'default',
         icon: '🚚'
       },

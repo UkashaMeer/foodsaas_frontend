@@ -10,7 +10,8 @@ import {
   Settings,
   ChefHat,
   X,
-  TrendingUp
+  TrendingUp,
+  Motorbike
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAdminStore } from '@/store/useAdminStore'
@@ -22,12 +23,12 @@ import { useRouter } from 'next/navigation'
 const menuItems = [
   { id: "dashboard", url: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
   { id: "categories", url: "/admin/dashboard/categories", label: "Categories", icon: Package, badge: null },
-  { id: "products", url: "/admin/dashboard/products", label: "Products", icon: Package, badge: "12" },
-  { id: "orders", url: "/admin/dashboard/orders", label: "Orders", icon: ShoppingCart, badge: "5" },
-  { id: "riders", url: "/admin/dashboard", label: "Riders", icon: Users, badge: "8" },
-  { id: "payments", url: "/admin/dashboard", label: "Payments", icon: CreditCard, badge: null },
-  { id: "analytics", url: "/admin/dashboard", label: "Analytics", icon: BarChart3, badge: null },
-  { id: "settings", url: "/admin/dashboard", label: "Settings", icon: Settings, badge: null },
+  { id: "Items", url: "/admin/dashboard/items", label: "Items", icon: Package, badge: null },
+  { id: "orders", url: "/admin/dashboard/orders", label: "Orders", icon: ShoppingCart, badge: null },
+  { id: "customers", url: "/admin/dashboard/customers", label: "Customers", icon: Users, badge: null },
+  { id: "riders", url: "/admin/dashboard/riders", label: "Riders", icon: Motorbike, badge: null },
+  { id: "transactions", url: "/admin/dashboard/transactions", label: "Transactions", icon: CreditCard, badge: null },
+  { id: "settings", url: "/admin/dashboard/settings", label: "Settings", icon: Settings, badge: null },
 ];
 
 export const AdminMobileSidebar = () => {
@@ -49,7 +50,7 @@ export const AdminMobileSidebar = () => {
   return (
     <>
       {/* Enhanced Overlay */}
-      <div 
+      <div
         className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 animate-in fade-in-0 duration-300"
         onClick={toggleMobileSidebar}
       />
@@ -71,7 +72,7 @@ export const AdminMobileSidebar = () => {
               </div>
               <div className="space-y-1">
                 <h1 className="text-xl font-semibold text-foreground tracking-tight">
-                  FoodPOS Pro
+                  FoodSaas Pro
                 </h1>
                 <p className="text-xs text-muted-foreground">
                   Restaurant Management
@@ -100,7 +101,7 @@ export const AdminMobileSidebar = () => {
               <Button
                 key={item.id}
                 variant={isActive ? "secondary" : "ghost"}
-                onClick={() => { handleMenuItemClick(item.id); router.push(item?.url)}}
+                onClick={() => { handleMenuItemClick(item.id); router.push(item?.url) }}
                 className={cn(
                   "w-full justify-start h-11 px-4 transition-all duration-200 relative",
                   "hover:bg-accent/50 hover:text-foreground",
@@ -179,7 +180,7 @@ export const AdminMobileSidebar = () => {
                   <span className="text-xs font-semibold text-foreground">65%</span>
                 </div>
                 <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="bg-linear-to-r from-primary to-primary/80 h-full rounded-full transition-all duration-1000"
                     style={{ width: '65%' }}
                   />

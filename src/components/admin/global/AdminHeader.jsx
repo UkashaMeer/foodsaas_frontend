@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
-  Search,
   Bell,
-  HelpCircle,
-  Calendar,
   ChevronDown,
   LogOut,
   Settings,
@@ -16,29 +13,35 @@ import { cn } from "@/lib/utils";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useUserLoginState } from "@/store/useUserLoginState";
 import { useRouter } from "next/navigation";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
-// Custom Hook for Click Outside
-const useClickOutside = (callback) => {
+const useClickOutside = (ref, callback) => {
   useEffect(() => {
-    const handleClick = () => callback();
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, [callback]);
+    const handleClick = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) {
+        callback();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [ref, callback]);
 };
 
 export const AdminHeader = () => {
   const {
-    searchOpen,
     notificationsOpen,
     profileDropdownOpen,
-    setSearchOpen,
     setNotificationsOpen,
     setProfileDropdownOpen,
     closeAllDropdowns,
     toggleMobileSidebar,
   } = useAdminStore();
 
-  // Close dropdowns when clicking outside
+  const { userData } = useUserLoginState()
+  console.log(userData)
+
   useClickOutside(closeAllDropdowns);
   const { removeLogin, userRole } = useUserLoginState()
   const router = useRouter()
@@ -47,14 +50,12 @@ export const AdminHeader = () => {
   const handleLogOut = () => {
     removeLogin()
 
-    // Redirect based on previous role
     if (userRole === 'OWNER') {
       router.push('/admin/login')
     } else {
       router.push('/')
     }
 
-    // Optional: Force reload to clear any cached state
     setTimeout(() => {
       window.location.reload()
     }, 100)
@@ -68,6 +69,12 @@ export const AdminHeader = () => {
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
+  const notificationsRef = useRef(null);
+  const profileRef = useRef(null);
+
+  useClickOutside(notificationsRef, () => setNotificationsOpen(false));
+  useClickOutside(profileRef, () => setProfileDropdownOpen(false));
+
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border/40">
       <div className="px-4 lg:px-6 h-16 flex items-center justify-between">
@@ -80,49 +87,9 @@ export const AdminHeader = () => {
           >
             <Menu className="w-5 h-5" />
           </button>
-
-          {/* Page Title */}
-          {/* <div>
-            <h1 className="text-xl lg:text-2xl font-semibold text-foreground tracking-tight">
-              Dashboard Overview
-            </h1>
-            <p className="text-sm text-muted-foreground hidden sm:block">
-              Welcome back! Here's your business overview.
-            </p>
-          </div> */}
         </div>
 
         <div className="flex items-center gap-2 lg:gap-4">
-
-          {/* Search Bar */}
-          <div className="relative">
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="p-2 rounded-lg hover:bg-accent transition-colors"
-            >
-              <Search className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            {searchOpen && (
-              <div className="absolute right-0 top-12 w-80 bg-popover border border-border rounded-xl shadow-lg p-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <input
-                    placeholder="Search menus, orders, analytics..."
-                    className="w-full pl-10 pr-4 py-2 bg-transparent border-none outline-none text-sm"
-                    autoFocus
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Help */}
-          <button className="p-2 rounded-lg hover:bg-accent transition-colors">
-            <HelpCircle className="w-5 h-5 text-muted-foreground" />
-          </button>
-
-          {/* Notifications */}
           <div className="relative">
             <button
               onClick={(e) => {
@@ -139,7 +106,6 @@ export const AdminHeader = () => {
               )}
             </button>
 
-            {/* Notifications Dropdown */}
             {notificationsOpen && (
               <div className="absolute right-0 top-12 w-80 bg-popover border border-border rounded-xl shadow-lg z-50">
                 <div className="p-4 border-b border-border">
@@ -182,76 +148,33 @@ export const AdminHeader = () => {
 
           {/* User Profile */}
           <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setProfileDropdownOpen(!profileDropdownOpen);
-              }}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors group"
-            >
-              <div className="w-8 h-8 bg-linear-to-br from-primary to-primary/80 rounded-full flex items-center justify-center shadow-sm">
-                <span className="text-sm font-semibold text-primary-foreground">
-                  AM
-                </span>
-              </div>
-
-              <div className="hidden lg:block text-left">
-                <p className="text-sm font-semibold text-foreground">
-                  Admin Manager
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Restaurant Owner
-                </p>
-              </div>
-
-              <ChevronDown
-                className={cn(
-                  "w-4 h-4 text-muted-foreground transition-transform duration-200 hidden lg:block",
-                  profileDropdownOpen && "rotate-180"
-                )}
-              />
-            </button>
-
-            {/* Profile Dropdown */}
-            {profileDropdownOpen && (
-              <div className="absolute right-0 top-12 w-64 bg-popover border border-border rounded-xl shadow-lg z-50">
-                <div className="p-4 border-b border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-linear-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-semibold text-primary-foreground">
-                        AM
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        Admin Manager
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        admin@foodpos.com
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-2">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent transition-colors">
-                    <User className="w-4 h-4" />
-                    My Profile
-                  </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent transition-colors">
-                    <Settings className="w-4 h-4" />
-                    Account Settings
-                  </button>
-                </div>
-
-              </div>
-            )}
-          </div>
-          <div className="p-2 ">
-            <button onClick={handleLogOut} className="cursor-pointer w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors">
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 sm:h-9 sm:w-9 rounded-md bg-primary hover:bg-primary/90"
+                >
+                  <User className='text-white w-4 h-4 sm:w-6 sm:h-6' />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[180px] sm:w-[200px]">
+                <DropdownMenuItem
+                  className="cursor-pointer gap-2"
+                  onClick={() => router.push("/admin/dashboard/settings")}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                  onClick={handleLogOut}
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

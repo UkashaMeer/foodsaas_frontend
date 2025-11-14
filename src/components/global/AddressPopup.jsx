@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAddressStore } from '@/store/useAddressStore'
+import { useGuestStore } from '@/store/useGuestStore'
 
 const AddressPopup = () => {
   const {
@@ -23,8 +24,10 @@ const AddressPopup = () => {
     setMapSuggestions,
     setMapLoading,
     setLocating,
-    addAddress
+    addAddress: addAddressToStore
   } = useAddressStore()
+
+  const { addAddress: addAddressToGuest, syncToLocalStorage } = useGuestStore()
 
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
@@ -88,12 +91,12 @@ const AddressPopup = () => {
       icon: customIcon
     }).addTo(map)
 
-    marker.on('dragend', function() {
+    marker.on('dragend', function () {
       const position = marker.getLatLng()
       reverseGeocode(position.lat, position.lng)
     })
 
-    map.on('click', function(e) {
+    map.on('click', function (e) {
       marker.setLatLng(e.latlng)
       reverseGeocode(e.latlng.lat, e.latlng.lng)
     })
@@ -105,7 +108,7 @@ const AddressPopup = () => {
   // Get Current Location
   const getCurrentLocation = () => {
     setLocating(true)
-    
+
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by this browser.')
       setLocating(false)
@@ -122,9 +125,9 @@ const AddressPopup = () => {
       (position) => {
         const lat = position.coords.latitude
         const lng = position.coords.longitude
-        
+
         setMapLocation({ lat, lng })
-        
+
         if (mapInstanceRef.current && markerRef.current) {
           mapInstanceRef.current.setView([lat, lng], 16)
           markerRef.current.setLatLng([lat, lng])
@@ -136,7 +139,7 @@ const AddressPopup = () => {
       (error) => {
         console.error('Error getting location:', error)
         let errorMessage = 'Unable to get your current location. '
-        switch(error.code) {
+        switch (error.code) {
           case error.PERMISSION_DENIED:
             errorMessage += 'Please allow location access in your browser settings.'
             break
@@ -163,19 +166,19 @@ const AddressPopup = () => {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`
       )
-      
+
       const data = await response.json()
-      
+
       if (data && data.address) {
         const addr = data.address
-        
+
         const building = addr.building || addr.house_number || ''
         const house = addr.house || ''
         const road = addr.road || ''
         const neighbourhood = addr.neighbourhood || addr.suburb || ''
         const city = addr.city || addr.town || addr.village || addr.county || ''
         const state = addr.state || ''
-        
+
         let formattedAddress = ''
         if (building) formattedAddress += `${building}, `
         if (house) formattedAddress += `${house}, `
@@ -183,9 +186,9 @@ const AddressPopup = () => {
         if (neighbourhood) formattedAddress += `${neighbourhood}, `
         if (city) formattedAddress += `${city}`
         if (state && city !== state) formattedAddress += `, ${state}`
-        
+
         formattedAddress = formattedAddress.replace(/,\s*$/, '')
-        
+
         setMapAddress(formattedAddress || data.display_name)
         setMapLocation({ lat, lng })
       }
@@ -205,7 +208,7 @@ const AddressPopup = () => {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=pk&limit=5&addressdetails=1`
       )
-      
+
       const data = await response.json()
       return data.map(item => ({
         display_name: item.display_name,
@@ -223,11 +226,11 @@ const AddressPopup = () => {
   const handleAddressChange = (value) => {
     setMapAddress(value)
     setMapSuggestions([])
-    
+
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current)
     }
-    
+
     if (value.length > 2) {
       searchTimeoutRef.current = setTimeout(async () => {
         const results = await searchAddress(value)
@@ -241,7 +244,7 @@ const AddressPopup = () => {
     setMapAddress(suggestion.display_name)
     setMapLocation({ lat: suggestion.lat, lng: suggestion.lon })
     setMapSuggestions([])
-    
+
     if (mapInstanceRef.current && markerRef.current) {
       mapInstanceRef.current.setView([suggestion.lat, suggestion.lon], 16)
       markerRef.current.setLatLng([suggestion.lat, suggestion.lon])
@@ -264,7 +267,11 @@ const AddressPopup = () => {
     }
 
     // Save to store
-    addAddress(addressData)
+    addAddressToStore(addressData)
+    addAddressToGuest(addressData)
+
+    syncToLocalStorage()
+
     setAddressPopupOpen(false)
   }
 
@@ -274,7 +281,7 @@ const AddressPopup = () => {
         <DialogHeader className="p-4 pb-0">
           <DialogTitle className="text-xl font-bold">Select Your Delivery Address</DialogTitle>
         </DialogHeader>
-        
+
         <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
           {/* Map Section */}
           <Card className="py-0!">
@@ -303,7 +310,7 @@ const AddressPopup = () => {
                   placeholder="Enter your complete address (house number, street, area, city)..."
                   className="w-full"
                 />
-                
+
                 {mapSuggestions.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {mapSuggestions.map((suggestion, index) => (

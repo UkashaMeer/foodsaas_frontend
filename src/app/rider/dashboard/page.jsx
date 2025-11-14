@@ -65,7 +65,7 @@ export default function RiderDashboard() {
         if (getRiderByUserIdData?.rider) {
             setRider(getRiderByUserIdData.rider)
             localStorage.setItem("riderId", getRiderByUserIdData.rider?._id)
-            
+
             // Auto-start timer if rider is online in backend
             if (getRiderByUserIdData.rider.status === 'ONLINE') {
                 startTimer()
@@ -194,7 +194,10 @@ export default function RiderDashboard() {
         return `PKR ${amount?.toLocaleString() || '0'}`
     }
 
-    const hasCurrentOrder = rider?.currentOrder?.orderId
+    if (rider?.currentOrder?.orderId?.status !== "DELIVERED") {
+        var hasCurrentOrder = rider?.currentOrder?.orderId
+    }
+
 
     if (!isRider) {
         return (
@@ -362,115 +365,7 @@ export default function RiderDashboard() {
                 </Card>
             </div>
 
-            {/* Available Orders & Quick Actions */}
-            <Tabs defaultValue="available" className="space-y-4">
-                <TabsList className="flex items-center gap-4">
-                    <TabsTrigger value="available">Available Orders</TabsTrigger>
-                    <TabsTrigger value="quick">Quick Actions</TabsTrigger>
-                </TabsList>
 
-                <TabsContent value="available" className="space-y-4">
-                    {onlineStatus !== 'ONLINE' ? (
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="text-center text-muted-foreground">
-                                    <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                    <p>Go online to see available orders</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ) : hasCurrentOrder ? (
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="text-center text-muted-foreground">
-                                    <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                    <p>Complete your current order to accept new ones</p>
-                                    <Button
-                                        onClick={handleViewAssignedOrders}
-                                        variant="outline"
-                                        className="mt-3"
-                                    >
-                                        View Current Order
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ) : ordersLoading ? (
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="text-center">Loading available orders...</div>
-                            </CardContent>
-                        </Card>
-                    ) : availableOrders.length === 0 ? (
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="text-center text-muted-foreground">
-                                    <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                    <p>No available orders at the moment</p>
-                                    <p className="text-sm">New orders will appear here automatically</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="grid gap-4">
-                            {availableOrders.slice(0, 5).map((order) => (
-                                <Card key={order._id} className="hover:shadow-md transition-shadow">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="outline">#{order.orderNumber}</Badge>
-                                                    <span className="font-medium">{order.userId?.name}</span>
-                                                </div>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {order.items?.length} items • {formatCurrency(order.totalPrice)}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    📍 {order.address}
-                                                </p>
-                                            </div>
-                                            <Button
-                                                onClick={() => handleAcceptOrder(order._id)}
-                                                disabled={acceptOrderMutation.isLoading}
-                                                size="sm"
-                                            >
-                                                Accept Order
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
-                </TabsContent>
-
-                <TabsContent value="quick" className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                            <CardContent className="p-6 text-center">
-                                <Navigation className="h-8 w-8 mx-auto mb-2 text-primary" />
-                                <h3 className="font-semibold">Update Location</h3>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Refresh your current location
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card
-                            className="cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={handleViewAssignedOrders}
-                        >
-                            <CardContent className="p-6 text-center">
-                                <Package className="h-8 w-8 mx-auto mb-2 text-primary" />
-                                <h3 className="font-semibold">View Assigned</h3>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Check your current orders
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </TabsContent>
-            </Tabs>
         </div>
     )
 }

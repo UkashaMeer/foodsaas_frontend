@@ -43,7 +43,7 @@ export const OrderCard = ({ order, showTracker = true }) => {
     const variants = {
       PENDING: 'secondary',
       CONFIRMED: 'default',
-      PREPARING: 'default',
+      PICKED_BY_RIDER: 'default',
       OUT_FOR_DELIVERY: 'default',
       DELIVERED: 'default',
       CANCELLED: 'destructive'

@@ -2,7 +2,7 @@
 import { jwtDecode } from 'jwt-decode'
 import { v4 as uuidv4 } from 'uuid';
 import { useEffect, useState } from 'react'
-import { ChevronRight, MapPin, Phone, User, CreditCard, Wallet, Check, Clock, Package, Lock } from 'lucide-react'
+import { ChevronRight, MapPin, Phone, User, CreditCard, Wallet, Check, Clock, Package, Lock, Edit, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { getAllCartItems } from '@/api/user/cart/getAllCartItems';
@@ -77,6 +77,93 @@ function StripeCardForm({ paymentMethod, onCardReady }) {
     );
 }
 
+// Address Selection Component
+function AddressSelection({
+    addresses,
+    selectedAddress,
+    onSelectAddress,
+    onEditAddress,
+    onAddCustomAddress,
+    showCustomForm,
+    onToggleCustomForm
+}) {
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    Select Delivery Address
+                </h3>
+                <button
+                    onClick={onToggleCustomForm}
+                    className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                >
+                    {showCustomForm ? (
+                        <>
+                            <MapPin className="w-4 h-4" />
+                            Choose from saved addresses
+                        </>
+                    ) : (
+                        <>
+                            <Plus className="w-4 h-4" />
+                            Add custom address
+                        </>
+                    )}
+                </button>
+            </div>
+
+            {!showCustomForm ? (
+                <div className="space-y-3">
+                    {addresses.map((address, index) => (
+                        <div
+                            key={index}
+                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${selectedAddress?.label === address.label
+                                    ? 'border-primary bg-primary/5 shadow-md'
+                                    : 'border-border hover:border-primary/50'
+                                }`}
+                            onClick={() => onSelectAddress(address)}
+                        >
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="font-semibold">{address.label}</span>
+                                        {address.isDefault && (
+                                            <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
+                                                Default
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mb-1">
+                                        {address.address}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Coordinates: {address.latitude?.toFixed(4)}, {address.longitude?.toFixed(4)}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEditAddress(address, index);
+                                    }}
+                                    className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="p-4 border border-dashed border-primary/30 rounded-lg bg-primary/5">
+                    <p className="text-sm text-muted-foreground text-center mb-3">
+                        You can add a custom address below
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function CheckoutPageContent() {
     const router = useRouter()
     const stripe = useStripe();
@@ -94,6 +181,12 @@ function CheckoutPageContent() {
     const [isCardReady, setIsCardReady] = useState(false)
     const [createdOrder, setCreatedOrder] = useState(null)
 
+    const [addresses, setAddresses] = useState([])
+    const [selectedAddress, setSelectedAddress] = useState(null)
+    const [showCustomForm, setShowCustomForm] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editingIndex, setEditingIndex] = useState(null)
+
     useEffect(() => {
         let guestId = null
         const token = typeof window !== "undefined" && localStorage.getItem("token")
@@ -102,18 +195,11 @@ function CheckoutPageContent() {
             try {
                 const decoded = jwtDecode(token)
                 setUserId(decoded?._id)
-                localStorage.removeItem("guestId")
             } catch (err) {
                 console.error("JWT Decode Error: ", err)
             }
-        } else {
-            guestId = localStorage.getItem("guestId")
-            if (!guestId) {
-                guestId = uuidv4()
-                localStorage.setItem("guestId", guestId)
-            }
         }
-
+        
         const payload = {
             userId: userId,
             guestId: guestId
@@ -128,6 +214,28 @@ function CheckoutPageContent() {
                 console.error("Something went wrong")
             }
         })
+    }, [])
+
+    // Load addresses from localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedAddresses = localStorage.getItem('userAddresses')
+            if (savedAddresses) {
+                try {
+                    const parsedAddresses = JSON.parse(savedAddresses)
+                    setAddresses(parsedAddresses)
+
+                    // Set default address as selected
+                    const defaultAddress = parsedAddresses.find(addr => addr.isDefault)
+                    if (defaultAddress) {
+                        setSelectedAddress(defaultAddress)
+                        updateFormDataFromAddress(defaultAddress)
+                    }
+                } catch (error) {
+                    console.error('Error parsing saved addresses:', error)
+                }
+            }
+        }
     }, [])
 
     const subtotal = cartItems.reduce((sum, cart) => {
@@ -150,11 +258,117 @@ function CheckoutPageContent() {
         instructions: ''
     })
 
+    const updateFormDataFromAddress = (address) => {
+        setFormData(prev => ({
+            ...prev,
+            address: address.address || '',
+            city: address.city || ''
+        }))
+    }
+
     const handleInputChange = (e) => {
         setFormData({
             ...formData,
             [e?.target?.name]: e?.target?.value
         })
+    }
+
+    // Address management functions
+    const handleSelectAddress = (address) => {
+        setSelectedAddress(address)
+        updateFormDataFromAddress(address)
+        setShowCustomForm(false)
+        setIsEditing(false)
+    }
+
+    const handleEditAddress = (address, index) => {
+        setSelectedAddress(address)
+        setEditingIndex(index)
+        setIsEditing(true)
+        setShowCustomForm(true)
+        updateFormDataFromAddress(address)
+
+        // Also update the label if you have it in formData
+        setFormData(prev => ({
+            ...prev,
+            addressLabel: address.label || ''
+        }))
+    }
+
+    const handleAddCustomAddress = () => {
+        setShowCustomForm(true)
+        setSelectedAddress(null)
+        setIsEditing(false)
+        setEditingIndex(null)
+
+        // Clear address fields for new entry
+        setFormData(prev => ({
+            ...prev,
+            address: '',
+            city: '',
+            addressLabel: ''
+        }))
+    }
+
+    const handleToggleCustomForm = () => {
+        setShowCustomForm(!showCustomForm)
+        if (!showCustomForm) {
+            handleAddCustomAddress()
+        } else if (addresses.length > 0) {
+            // When switching back to saved addresses, select the default
+            const defaultAddress = addresses.find(addr => addr.isDefault)
+            if (defaultAddress) {
+                handleSelectAddress(defaultAddress)
+            }
+        }
+    }
+
+    const saveAddressToLocalStorage = (newAddresses) => {
+        localStorage.setItem('userAddresses', JSON.stringify(newAddresses))
+        setAddresses(newAddresses)
+    }
+
+    const handleSaveAddress = () => {
+        if (!formData.address.trim()) {
+            toast.error('Please enter a valid address')
+            return
+        }
+
+        const newAddress = {
+            label: formData.addressLabel || `Address ${addresses.length + 1}`,
+            address: formData.address,
+            city: formData.city,
+            longitude: selectedAddress?.longitude || 67.0525182, // Default Karachi longitude
+            latitude: selectedAddress?.latitude || 24.8598838, // Default Karachi latitude
+            isDefault: addresses.length === 0 // First address becomes default
+        }
+
+        let newAddresses = [...addresses]
+
+        if (isEditing && editingIndex !== null) {
+            // Update existing address
+            newAddresses[editingIndex] = newAddress
+            toast.success('Address updated successfully')
+        } else {
+            // Add new address
+            newAddresses.push(newAddress)
+            toast.success('Address added successfully')
+        }
+
+        saveAddressToLocalStorage(newAddresses)
+        setSelectedAddress(newAddress)
+        setShowCustomForm(false)
+        setIsEditing(false)
+        setEditingIndex(null)
+    }
+
+    const handleSetDefaultAddress = (index) => {
+        const newAddresses = addresses.map((addr, i) => ({
+            ...addr,
+            isDefault: i === index
+        }))
+        saveAddressToLocalStorage(newAddresses)
+        toast.success('Default address updated')
     }
 
     const steps = [
@@ -167,7 +381,6 @@ function CheckoutPageContent() {
         try {
             setIsProcessing(true);
 
-            // Clean phone number - remove all non-numeric characters
             const cleanPhoneNumber = formData.phone.replace(/\D/g, '');
 
             const payload = {
@@ -402,28 +615,90 @@ function CheckoutPageContent() {
                                                 placeholder="john@example.com"
                                             />
                                         </div>
-                                        <div className="space-y-4">
+                                    </div>
+                                </div>
+
+                                {/* Address Selection Section */}
+                                <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
+                                    <AddressSelection
+                                        addresses={addresses}
+                                        selectedAddress={selectedAddress}
+                                        onSelectAddress={handleSelectAddress}
+                                        onEditAddress={handleEditAddress}
+                                        onAddCustomAddress={handleAddCustomAddress}
+                                        showCustomForm={showCustomForm}
+                                        onToggleCustomForm={handleToggleCustomForm}
+                                    />
+
+                                    {/* Custom Address Form */}
+                                    {(showCustomForm || addresses.length === 0) && (
+                                        <div className="mt-6 space-y-4 p-4 border border-dashed border-primary/30 rounded-lg bg-primary/5">
+                                            <div className="flex items-center justify-between">
+                                                <h4 className="font-semibold flex items-center gap-2">
+                                                    <Plus className="w-4 h-4" />
+                                                    {isEditing ? 'Edit Address' : 'Add New Address'}
+                                                </h4>
+                                                {isEditing && (
+                                                    <button
+                                                        onClick={() => handleSetDefaultAddress(editingIndex)}
+                                                        className="text-xs text-primary hover:text-primary/80 transition-colors"
+                                                    >
+                                                        Set as Default
+                                                    </button>
+                                                )}
+                                            </div>
+
                                             <div>
-                                                <label className="block text-sm font-medium mb-2">Complete Address</label>
+                                                <label className="block text-sm font-medium mb-2">Address Label (Optional)</label>
+                                                <Input
+                                                    type="text"
+                                                    name="addressLabel"
+                                                    value={formData.addressLabel || ''}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Home, Office, etc."
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium mb-2">Complete Address *</label>
                                                 <Textarea
                                                     name="address"
                                                     value={formData.address}
                                                     onChange={handleInputChange}
                                                     rows="3"
                                                     placeholder="House/Flat no, Street, Area"
+                                                    required
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium mb-2">Delivery Instructions (Optional)</label>
+                                                <label className="block text-sm font-medium mb-2">City *</label>
                                                 <Input
                                                     type="text"
-                                                    name="instructions"
-                                                    value={formData.instructions}
+                                                    name="city"
+                                                    value={formData.city}
                                                     onChange={handleInputChange}
-                                                    placeholder="Ring the doorbell, Leave at door, etc."
+                                                    placeholder="Karachi"
+                                                    required
                                                 />
                                             </div>
+                                            <button
+                                                onClick={handleSaveAddress}
+                                                className="w-full bg-primary text-primary-foreground rounded-lg py-3 font-semibold hover:bg-primary/90 transition-all"
+                                                disabled={!formData.address.trim() || !formData.city.trim()}
+                                            >
+                                                {isEditing ? 'Update Address' : 'Save Address'}
+                                            </button>
                                         </div>
+                                    )}
+
+                                    <div className="mt-6">
+                                        <label className="block text-sm font-medium mb-2">Delivery Instructions (Optional)</label>
+                                        <Input
+                                            type="text"
+                                            name="instructions"
+                                            value={formData.instructions}
+                                            onChange={handleInputChange}
+                                            placeholder="Ring the doorbell, Leave at door, etc."
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -557,7 +832,7 @@ function CheckoutPageContent() {
                         {step === 3 && (
                             <div className="flex gap-4">
                                 <button
-                                    onClick={() => router.push("/profile")}
+                                    onClick={() => router.push("/profile?from=checkout")}
                                     className="cursor-pointer flex-1 bg-primary text-primary-foreground rounded-lg py-3 font-semibold hover:bg-primary/90 transition-all shadow-lg"
                                 >
                                     View Your Orders
@@ -572,7 +847,7 @@ function CheckoutPageContent() {
                         )}
                     </div>
 
-                    {/* Order Summary Sidebar - Same as before */}
+                    {/* Order Summary Sidebar */}
                     <div className="lg:col-span-2">
                         <div className="bg-card border border-border rounded-2xl p-6 shadow-lg sticky top-8 animate-fade-in">
                             <h3 className="text-lg font-semibold mb-4">Order Summary</h3>

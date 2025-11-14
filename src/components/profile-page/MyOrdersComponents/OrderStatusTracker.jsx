@@ -5,7 +5,7 @@ export const OrderStatusTracker = ({ status, paymentStatus }) => {
   const statusSteps = [
     { key: 'PENDING', label: 'Order Placed', icon: Clock, color: 'text-yellow-500' },
     { key: 'ACCEPTED', label: 'Accepted', icon: CheckCircle2, color: 'text-blue-500' },
-    { key: 'PREPARING', label: 'Preparing', icon: ChefHat, color: 'text-orange-500' },
+    { key: 'PICKED_BY_RIDER', label: 'Picked By Rider', icon: ChefHat, color: 'text-orange-500' },
     { key: 'ON_THE_WAY', label: 'On The Way', icon: Truck, color: 'text-purple-500' },
     { key: 'DELIVERED', label: 'Delivered', icon: Package, color: 'text-green-500' },
   ];

@@ -3,11 +3,12 @@ import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { useLogin } from "@/api/user/auth/useLogin";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useUserLoginState } from "@/store/useUserLoginState";
 import { saveToken } from "@/utils/auth";
 import { Eye, EyeOff, Lock } from "lucide-react";
+import { useGuestStore } from "@/store/useGuestStore";
 
 export default function LoginForm() {
     const { mutate, isPending } = useLogin()
@@ -15,21 +16,28 @@ export default function LoginForm() {
     const { showLogin, closeLogin, openRegister } = useAuthDialogState()
     const [form, setForm] = useState({ email: "", password: "" })
     const [showPassword, setShowPassword] = useState(false)
+    const { guestId } = useGuestStore()
 
     const handleSubmit = (e) => {
         e.preventDefault()
 
-        mutate(form, {
+        const payload = {
+            email: form.email,
+            password: form.password,
+            guestId: guestId
+        }
+
+        console.log(payload)
+
+        mutate(payload, {
             onSuccess: (res) => {
                 toast.success("Login Successfully.")
-                // Save token in both localStorage and cookies
                 saveToken(res.token)
                 localStorage.removeItem("guestId")
 
                 setForm({ email: "", password: "" })
-                checkLogin() // Update store state
+                checkLogin() 
 
-                // Let middleware handle the redirect
                 window.location.href = res.data.role === "OWNER" ? "/admin/dashboard" : res.data.role === "RIDER" ? "/rider/dashboard" : "/"
             },
             onError: (err) => {
@@ -51,10 +59,6 @@ export default function LoginForm() {
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         disabled={isPending}
                     />
-                    <div className="space-y-2">
-                        <label htmlFor="password" className="text-sm font-medium text-foreground">
-                            Password
-                        </label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                             <Input
@@ -75,7 +79,6 @@ export default function LoginForm() {
                                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
-                    </div>
                     <Button type="submit" className="cursor-pointer">
                         {
                             isPending ? "Logining..." : "Login"

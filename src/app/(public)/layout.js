@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import Header from "@/components/global/Header";
 import CartSidebar from "@/components/cart/CartSidebar";
 import Footer from "@/components/global/Footer";
+import GuestInitializer from "@/providers/GuestInitailizer";
 
 export const metadata = {
   title: "Food Saas",
@@ -16,6 +17,7 @@ export default function UserLayout({ children }) {
       <div>
         <Toaster />
         <Providers>
+          <GuestInitializer />
           <Header />
           {children}
           <Footer />

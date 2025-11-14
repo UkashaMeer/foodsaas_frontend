@@ -5,61 +5,22 @@ import {
     DialogContent,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { useEffect, useState } from "react"
+import { useState } from "react" 
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { useRegister } from "@/api/user/auth/useRegister"
 import { toast } from "sonner"
 import { useAuthDialogState } from "@/store/useAuthDialogState"
+import { Eye, EyeOff, Lock } from "lucide-react"
+import { useGuestStore } from "@/store/useGuestStore"
 
 export default function RegisterForm() {
     const { mutate, isPending } = useRegister()
     const { showRegister, closeRegister, openOTP, openLogin } = useAuthDialogState()
     const [form, setForm] = useState({ name: "", email: "", phoneNumber: "", password: "" })
-    const [isClient, setIsClient] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     
-    const [registrationData, setRegistrationData] = useState({
-        addresses: [],
-        guestId: null
-    })
-
-    useEffect(() => {
-        setIsClient(true)
-        
-        if (typeof window !== 'undefined') {
-            const savedAddress = localStorage.getItem('userAddress')
-            const savedGuestId = localStorage.getItem('guestId')
-            
-            const addresses = []
-            let guestId = null
-
-            if (savedAddress) {
-                try {
-                    const addressData = JSON.parse(savedAddress)
-                    const formattedAddress = {
-                        label: addressData.label || 'Home',
-                        address: addressData.address,
-                        longitude: addressData.longitude,
-                        latitude: addressData.latitude,
-                        isDefault: true
-                    }
-                    addresses.push(formattedAddress)
-                    console.log("📍 Loaded address:", formattedAddress)
-                } catch (error) {
-                    console.error('Error parsing saved address:', error)
-                }
-            }
-
-            if (savedGuestId) {
-                guestId = savedGuestId
-            }
-
-            setRegistrationData({
-                addresses: addresses,
-                guestId: guestId
-            })
-        }
-    }, [])
+    const { guestId, addresses } = useGuestStore()
 
     const handleSubmit = (e) => {
         e.preventDefault()
@@ -69,8 +30,8 @@ export default function RegisterForm() {
             email: form.email,
             phoneNumber: form.phoneNumber,
             password: form.password,
-            addresses: registrationData.addresses,
-            guestId: registrationData.guestId
+            addresses: addresses,
+            guestId: guestId
         }
 
         if (!payload.name || !payload.email || !payload.phoneNumber || !payload.password) {
@@ -78,9 +39,14 @@ export default function RegisterForm() {
             return
         }
 
+
+        if (addresses.length === 0) {
+            toast.warning("No address found. You can add addresses later in your profile.")
+        }
+
         mutate(payload, {
             onSuccess: (res) => {
-                toast.success("Registered Successfully")                
+                toast.success("Registered Successfully")
                 localStorage.setItem("email", form.email)
                 setForm({ name: "", email: "", phoneNumber: "", password: "" })
                 closeRegister()
@@ -124,29 +90,40 @@ export default function RegisterForm() {
                         disabled={isPending}
                         required
                     />
-                    <Input
-                        type="password"
-                        placeholder="Enter Password (min 6 characters)"
-                        value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
-                        disabled={isPending}
-                        required
-                        minLength={6}
-                    />
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                        <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            value={form.password}
+                            onChange={(e) => setForm({ ...form, password: e.target.value })}
+                            disabled={isPending}
+                            className="pl-10 pr-10"
+                            required
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
                     
-                    <Button 
-                        type="submit" 
+                    <Button
+                        type="submit"
                         className="cursor-pointer mt-2"
-                        disabled={isPending}
+                        disabled={isPending || !guestId} // Disable if no guestId
                     >
                         {isPending ? "Registering..." : "Create Account"}
                     </Button>
                 </form>
-                
+
                 <span className="text-sm text-gray-500 mx-auto mt-4">
                     Already have Account?{" "}
-                    <button 
-                        className="text-primary cursor-pointer underline" 
+                    <button
+                        className="text-primary cursor-pointer underline"
                         onClick={() => { openLogin(); closeRegister(); }}
                         disabled={isPending}
                     >
