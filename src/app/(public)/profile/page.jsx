@@ -1,4 +1,5 @@
 "use client"
+import { Suspense } from "react"
 import { useUser } from '@/api/user/auth/useUser'
 import { useGetOrderByUserId } from '@/api/user/order/useGetOrderByUserId'
 import EditProfile from '@/components/profile-page/EditProfile'
@@ -10,12 +11,12 @@ import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function Profile() {
+function ProfileContent() {
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState("details")
 
-  // Check if user is coming from checkout
   useEffect(() => {
     const fromCheckout = searchParams.get('from')
     if (fromCheckout === 'checkout') {
@@ -56,5 +57,13 @@ export default function Profile() {
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+export default function Profile() {
+  return (
+    <Suspense fallback={<div className="p-10"><Spinner className="size-8 text-primary" /></div>}>
+      <ProfileContent />
+    </Suspense>
   )
 }
