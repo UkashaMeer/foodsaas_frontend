@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+    baseURL: "http://foodsaas-backend-aoyrcg-0e6a59-151-243-3-122.traefik.me/api"
 })
 
 axiosClient.interceptors.request.use((config) => {
